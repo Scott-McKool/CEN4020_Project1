@@ -1,6 +1,7 @@
 #!./venv/bin/python3
 from json import load, dump
 from random import randint
+import playsound
 
 class Move_result:
     '''The result of an attempted move on the game board, it is either a success or not, and has an acompanying decription'''
@@ -18,9 +19,11 @@ class Move_result:
 
     def __str__(self):
         if self.success():
+            playsound.playsound('C:/Users/duxed/OneDrive/Documents/CODE/CEN4020_Project1/correct.mp3', block=False)
             return self.description()
         
         if not self.success():
+            playsound.playsound('C:/Users/duxed/OneDrive/Documents/CODE/CEN4020_Project1/wrong.mp3', block=False)
             return f"unsuccessfull move: {self.data[1]}"
 
 class Game:
