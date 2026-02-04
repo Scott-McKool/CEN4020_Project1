@@ -19,11 +19,9 @@ class Move_result:
 
     def __str__(self):
         if self.success():
-            playsound.playsound('C:/Users/duxed/OneDrive/Documents/CODE/CEN4020_Project1/correct.mp3', block=False)
             return self.description()
         
         if not self.success():
-            playsound.playsound('C:/Users/duxed/OneDrive/Documents/CODE/CEN4020_Project1/wrong.mp3', block=False)
             return f"unsuccessfull move: {self.data[1]}"
 
 class Game:
@@ -179,6 +177,9 @@ if __name__ == "__main__":
         x, y = in_str.split(" ")
         did_place: Move_result = newGame.place(int(x)-1, int(y)-1)
 
-        if not did_place.success():
+        if did_place.success():
+            playsound.playsound("correct.mp3", block=False)
+        elif not did_place.success():
+            playsound.playsound("wrong.mp3", block=False)
             print(did_place)
         
