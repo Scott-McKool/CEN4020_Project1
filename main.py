@@ -2,6 +2,7 @@
 from json import load, dump
 from random import randint
 import playsound
+import tkinter as tk
 
 class Move_result:
     '''The result of an attempted move on the game board, it is either a success or not, and has an acompanying decription'''
