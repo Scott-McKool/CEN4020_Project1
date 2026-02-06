@@ -302,7 +302,7 @@ if __name__ == "__main__":
         x, y, val = in_str.split(" ")
         place_result: Move_result = newGame.place(int(x)-1, int(y)-1, int(val))
 
-        if did_place.success():
+        if place_result.success():
             playsound.playsound("correct.mp3", block=False)
         elif not place_result.success():
             playsound.playsound("wrong.mp3", block=False)
