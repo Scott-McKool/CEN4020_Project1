@@ -1,15 +1,15 @@
 #!./venv/bin/python3
+from __future__ import annotations
 from json import load, dump
 from random import randint
-
-class Result:
-    '''The result of attempting a given action, it is either successfull or not, and includes a text description of the result'''
+class Move_result:
+    '''The result of attempting a given move, it is either successfull or not, and includes a text description of the result'''
     data: tuple[bool, str]
     def __init__(self, success: bool, description: str = "Description missing."):
         self.data = (success, description)
 
     def success(self) -> bool:
-        '''Does the result represent a success (true if yes, false if no)'''
+        '''Does the result represent a success? (true if yes, false if no)'''
         return self.data[0]
     
     def description(self) -> str:
@@ -18,10 +18,38 @@ class Result:
     
     def __str__(self):
         if self.success():
-            return f"Successful: {self.description()}"
+            return f"Successful move: {self.description()}"
         
         if not self.success():
-            return f"Unsuccessfull: {self.description()}"
+            return f"Unsuccessfull move: {self.description()}"
+
+class Level_up_result:
+    '''the result of attampting to level up a game board, it is either a game board or None, and includes a text description'''
+    data: tuple[Game | None, str]
+    def __init__(self, new_game: Game | None, description: str = "Description missing."):
+        self.data = (new_game, description)
+
+    def success(self) -> bool:
+        '''Did leveling up succeed?'''
+        if isinstance(self.data[0], Game):
+            return True
+        else:
+            return False
+
+    def game_board(self) -> Game | None:
+        '''The leveled up game board, or None'''
+        return self.data[0]
+        
+    def description(self) -> str:
+        '''The description of the result'''
+        return self.data[1] or "Description missing."
+    
+    def __str__(self):
+        if self.success():
+            return f"Successful level up: {self.description()}"
+        
+        if not self.success():
+            return f"Unsuccessfull level up: {self.description()}"
 
 
 class Game:
@@ -38,19 +66,39 @@ class Game:
         # init cell values 
         self.cells = [[0]*size for _ in range(size)]
     
-    def place(self, x: int, y: int, value: int) -> Result:
+    def place(self, x: int, y: int, value: int) -> Move_result:
         '''Attempt to place a value at a given coordinate within the rules of the game. x and y are index values'''
         # make sure coords are in-bounds
         if x >= self.size or y >= self.size or x < 0 or y < 0:
-            return Result(False, "Given coordinates are out of bounds.")
+            return Move_result(False, "Given coordinates are out of bounds.")
         
         # make sure space in unnoccupied
         if self.cells[x][y] != 0:
-            return Result(False, "Space is already filled.")
+            return Move_result(False, "Space is already filled.")
         
         # ok to proceed
-        return Result(True)
+        return Move_result(True)
         
+    def level_up(self) -> Level_up_result:
+        '''Attempt to premote the game board to the next level'''
+        # make sure all cells are filled
+        for row in self.cells:
+            for cell in row:
+                if cell == 0:
+                    return Level_up_result(None, "All spaces must be filled before moving to the next level")
+        
+        # is premotion possible?
+        if Game_loader.levels[self.level + 1]:
+            # make a new game object based on this game, at the next higher level
+            cls = Game_loader.levels[self.level + 1]
+            # make new instance of the required type
+            # the type will alsways be lvl2 or more, and take a lower level game as its argument
+            new_game: Game = cls(self)
+            return Level_up_result(new_game, f"Premoted from level {self.level} to level {new_game.level}") 
+        else:
+            return Level_up_result(None, "Game is already at max level")
+
+
     def from_data(self, data: dict) -> None:
         '''Populate the object's atributes from a dictionary'''
         self.cells = data["cells"]
@@ -96,7 +144,7 @@ class Level1(Game):
         self.last_move = (rand_x, rand_y)
 
 
-    def place(self, x: int, y: int, value: int = None) -> Result:
+    def place(self, x: int, y: int, value: int = None) -> Move_result:
         # does the placement pass the basic checks?
         basic_checks = super().place(x, y, value)
         if not basic_checks.success():
@@ -107,7 +155,7 @@ class Level1(Game):
         dy = abs(self.last_move[1] - y)
 
         if dx > 1 or dy > 1:
-            return Result(False, "Move must be a neighbor of its predececcor.")
+            return Move_result(False, "Move must be a neighbor of its predececcor.")
         
         # asses score for the move (is move place on a diagonal)
         if dx == dy:
@@ -118,12 +166,14 @@ class Level1(Game):
             value = self.cur_move
             self.cur_move += 1
         elif value != self.cur_move:
-            return Result(False, "Move's value must be 1 greater than its predecesor.")
+            return Move_result(False, "Move's value must be 1 greater than its predecesor.")
 
         # make the move
         self.cells[x][y] = value
         self.last_move = (x, y)
-        return Result(True)
+        return Move_result(True)
+    
+
 
     def from_data(self, data) -> None:
         self.last_move = data["last_move"]
@@ -142,6 +192,8 @@ class Level2(Game):
         for y in range(0, base_game.size):
             for x in range(0, base_game.size):
                 self.cells[x+1][y+1] = base_game.cells[x][y]
+        # keep track of played numbers
+        self.played = [False] * (2 * (self.size + self.size)) # array of size = perimeter of board
 
 
     def _search_in_line(self, x: int, y: int, dx: int, dy: int, value: int) -> bool:
@@ -160,11 +212,15 @@ class Level2(Game):
         return False
 
 
-    def place(self, x: int, y: int, value: int = None) -> Result:
+    def place(self, x: int, y: int, value: int = None) -> Move_result:
         # does the placement pass the basic checks?
         basic_checks = super().place(x, y, value)
         if not basic_checks.success():
             return basic_checks
+
+        # make sure number has not already been played
+        if self.played[value]:
+            return Move_result(False, "Each number may only be placed once.")
 
         # do checks for if value is present in the apropriate line
         found_value: bool
@@ -181,14 +237,16 @@ class Level2(Game):
         found_value = self._search_in_line(x, y, deltaX, deltaY, value)
 
         if found_value == False:
-            return Result(False, "The number of the move and the number in the inner board must be on a straight line.")
+            return Move_result(False, "The number of the move and the number in the inner board must be on a straight line.")
 
         # make the move
         self.cells[x][y] = value
-        return Result(True)
+        self.played[value] = True
+        return Move_result(True)
 
     def from_data(self, data) -> None:
         super().from_data(data)
+        self.played = data["played"]
 
 class Game_loader():
     levels: dict = {
@@ -223,7 +281,7 @@ if __name__ == "__main__":
     while True:
 
         print(newGame)
-        in_str: str = input("enter your move 'x y' (s=save, l=load, q=quit):")
+        in_str: str = input("enter your move 'x y value' (s=save, l=load, q=quit):")
 
         if in_str == "q":
             exit()
@@ -239,8 +297,10 @@ if __name__ == "__main__":
             continue
 
         x, y, val = in_str.split(" ")
-        did_place: Result = newGame.place(int(x)-1, int(y)-1, int(val))
+        place_result: Move_result = newGame.place(int(x)-1, int(y)-1, int(val))
 
-        if not did_place.success():
-            print(did_place)
+        if not place_result.success():
+            print(place_result)
+        
+        newGame.level_up()
         
