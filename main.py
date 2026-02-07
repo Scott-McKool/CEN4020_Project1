@@ -277,7 +277,6 @@ class Game_loader():
                 return obj
 
 
-
 if __name__ == "__main__":
     newGame: Game = Level1(5)
 
