@@ -297,7 +297,6 @@ class Game_loader():
                 return obj
 
 
-
 if __name__ == "__main__":
     name: str = input("please enter your name: ")
     newGame: Game = Level1(name, 5)
