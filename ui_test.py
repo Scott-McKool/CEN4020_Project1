@@ -19,6 +19,11 @@ def fillNum(grid, rowval: int, colval: int):
     if grid[rowval][colval]['text'] == " ":
         grid[rowval][colval].configure(text=f"{count+1}")
         count += 1
+    else:
+        errorwindow = tk.Tk()
+        errorwindow.title("Error")
+        errormessage = tk.Label(errorwindow, text="Sorry! That is an invalid square, please try again.", padx=10, pady=10)
+        errormessage.pack()
 
 def gamegrid(fivegrid):
     global lvl1grid
