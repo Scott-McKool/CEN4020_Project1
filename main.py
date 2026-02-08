@@ -34,8 +34,12 @@ class Game:
         self.size = size
         # init cell values 
         self.cells = [[0]*size for _ in range(size)]
+
+        self.next_number = 2 # L1 begins 
+        self.move_stack = [] # undo
+        self.one_p = None # initial positions of x and y
     
-    def place(self, x: int, y: int, value: int) -> Move_result:
+    def place(self, x: int, y: int, value: int = None) -> Move_result:
         '''Attempt to place a value at a given coordinate within the rules of the game. x and y are index values'''
         # make sure coords are in-bounds
         if x >= self.size or y >= self.size or x < 0 or y < 0:
@@ -45,8 +49,20 @@ class Game:
         if self.cells[x][y] != 0:
             return Move_result(False, "Space is already filled.")
         
+        move_hist = { "x": x, "y": y, "prev_cell" : self.cells[x][y], 
+                     "prev_score": self.score, "next": self.next_number
+        }
+        
+        self.move_stack.append(move_hist)
+        placed = self.cur_move
+        self.cells[x][y] = placed
+        if placed == 1:
+            self.one_p = (x,y)
+
+        self.cur_move +=1
+
         # ok to proceed
-        return Move_result(True)
+        return Move_result(True, f"Value placed {placed}")
         
     def from_data(self, data: dict) -> None:
         '''Populate the object's atributes from a dictionary'''
@@ -76,7 +92,47 @@ class Game:
         result += f"\n\nScore: {self.score}"
         
         return result
+    
+    def get(self, x: int, y:int) -> int:
+        return self.cells[x][y] # retrieve (x,y) numbers
+    
+    def set(self, x:int, y:int, value: int):
+        self.cells[x][y] = value # set numbers at cell (x,y)
+    
+    # undo move
+    def undo(self):
+        if not self.move_stack:
+            return Move_result(False, "Cannot undo.")
+        
+        prev = self.move_stack.pop()
+        self.set(prev["x"], prev["y"], prev["prev_cell"])
+        self.score = prev["prev_score"]
+        self.cur_move = prev["next"]
 
+        return Move_result(True, f"Undo successful. Next value is {self.cur_move}")
+    
+    def get_next_number(self) -> int:
+        return self.cur_move # returning next num to set
+
+
+    def clear(self) -> Move_result:
+        ''' Clearing the board, but 1 stays in its main position. 1 does not get cleared'''
+
+        if self.last_move is None:
+            return Move_result(False, "Unable to clear, value 1 position not found.")
+        
+        for i in range(self.size):
+            for t in range(self.size):
+                self.set(i, t, 0)
+
+        self.set(self.last_move[0], self.last_move[1], 1)
+
+        # reset
+        self.cur_move = 2
+        self.score = 0
+        self.move_stack.clear()
+
+        return Move_result(True, "Board is now clear. ")
 
 class Level1(Game):
     def __init__(self, size: int):
