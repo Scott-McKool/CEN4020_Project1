@@ -75,6 +75,7 @@ class Game:
         self.next_number = 2 # L1 begins 
         self.move_stack = [] # undo
         self.one_p = None # initial positions of x and y
+        self.log = []
     
     def place(self, x: int, y: int, value: int = None) -> Move_result:
         '''Attempt to place a value at a given coordinate within the rules of the game. x and y are index values'''
@@ -166,6 +167,9 @@ class Game:
     
     def get_next_number(self) -> int:
         return self.cur_move # returning next num to set
+    
+    def add_log(self, category: str, description):
+        self.log.append(f"Category: {category} {description}\n")
 
 
     def clear(self) -> Move_result:
