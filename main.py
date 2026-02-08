@@ -165,8 +165,6 @@ class Game:
 
         return Move_result(True, f"Undo successful. Next value is {self.cur_move}")
     
-    def get_next_number(self) -> int:
-        return self.cur_move # returning next num to set
     
     def add_log(self, category: str, description):
         self.log.append(f"Category: {category} {description}\n")
