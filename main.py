@@ -50,14 +50,14 @@ class Game:
             return Move_result(False, "Space is already filled.")
         
         move_hist = { "x": x, "y": y, "prev_cell" : self.cells[x][y], 
-                     "prev_score": self.score, "next": self.next_number
+                     "prev_score": self.score, "next": self.cur_move
         }
         
         self.move_stack.append(move_hist)
         placed = self.cur_move
         self.cells[x][y] = placed
         if placed == 1:
-            self.one_p = (x,y)
+            self.last_move = (x,y)
 
         self.cur_move +=1
 
@@ -118,21 +118,47 @@ class Game:
     def clear(self) -> Move_result:
         ''' Clearing the board, but 1 stays in its main position. 1 does not get cleared'''
 
-        if self.last_move is None:
-            return Move_result(False, "Unable to clear, value 1 position not found.")
+        # L1 board clearing
+        if self.level == 1:
+            try: 
+                if self.last_move is None:
+                    return Move_result(False, "Unable to clear, value 1 position not found.")
+            except AttributeError:
+                return Move_result(False, "Unable to clear, value 1 position not found.")
         
-        for i in range(self.size):
-            for t in range(self.size):
-                self.set(i, t, 0)
+            # clearing thr grid
+            for i in range(self.size):
+                for t in range(self.size):
+                    self.set(i, t, 0)
 
-        self.set(self.last_move[0], self.last_move[1], 1)
+        # setting original position of number '1'
+            first_x, first_y = self.last_move
+            self.set(first_x, first_y, 1)
 
-        # reset
-        self.cur_move = 2
-        self.score = 0
-        self.move_stack.clear()
+            # reset
+            self.cur_move = 2
+            self.score = 0
+            self.move_stack.clear()
 
-        return Move_result(True, "Board is now clear. ")
+            return Move_result(True, "Board is now clear for Level 1.")
+
+        # L2 board clearing
+        if self.level == 2:
+            # clearing edge cells on the 7x7
+            for i in range(self.size):
+                for t in range(self.size):
+                    border = (i == 0 or i == self.size - 1 or t == 0 or t == self.size - 1)
+                    if border:
+                        self.set(i, t, 0)
+                        
+            # start value at level 2
+            self.cur_move = 2
+            self.move_stack.clear()
+            return Move_result(True, "Outer grid cleared. ")
+        
+        # 
+        return Move_result(False, f"Uknown Level --> {self.level} not available")
+
 
 class Level1(Game):
     def __init__(self, size: int):
