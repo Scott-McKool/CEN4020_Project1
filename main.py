@@ -1,7 +1,10 @@
 #!./venv/bin/python3
 from __future__ import annotations
+from datetime import datetime
 from json import load, dump
 from random import randint
+
+
 class Move_result:
     '''The result of attempting a given move, it is either successfull or not, and includes a text description of the result'''
     data: tuple[bool, str]
@@ -57,14 +60,18 @@ class Game:
     size : int
     score: int
     level: int
+    log  : list[str]
+    player: str
     cur_move: int
     def __init__(self, size: int):
         self.cur_move = 2
         self.level = None
         self.size = size
         self.score = 0
+        self.log = list()
         # init cell values 
         self.cells = [[0]*size for _ in range(size)]
+        # add header to log
     
     def place(self, x: int, y: int, value: int) -> Move_result:
         '''Attempt to place a value at a given coordinate within the rules of the game. x and y are index values'''
@@ -78,7 +85,10 @@ class Game:
         
         # ok to proceed
         return Move_result(True)
-        
+
+    def add_log(self, category: str, description):
+        self.log.append(f"[{category}] {description}\n")    
+    
     def level_up(self) -> Level_up_result:
         '''Attempt to premote the game board to the next level'''
         # make sure all cells are filled
@@ -94,6 +104,7 @@ class Game:
             # make new instance of the required type
             # the type will alsways be lvl2 or more, and take a lower level game as its argument
             new_game: Game = cls(self)
+            new_game.add_log("level up", f"leveled up from level {self.level} to level {new_game.level}")
             return Level_up_result(new_game, f"Premoted from level {self.level} to level {new_game.level}") 
         else:
             return Level_up_result(None, "Game is already at max level")
@@ -105,8 +116,9 @@ class Game:
         self.size  = data["size"]
         self.score = data["score"]
         self.level = data["level"]
+        self.player= data["player"]
+        self.log   = data["log"]
         self.cur_move  = data["cur_move"]
-
 
     def __str__(self):
         result: str = ""
@@ -132,10 +144,15 @@ class Game:
 
 
 class Level1(Game):
-    def __init__(self, size: int):
+    def __init__(self, player_name: str, size: int):
         super().__init__(size)
         self.level: int = 1
-
+        self.player = player_name
+        self.add_log("", f"Starting new Game:")
+        self.add_log("", f"Player name: {player_name}")
+        self.add_log("", f"Game started: {datetime.now()}")
+        self.add_log("", f"Level 1")
+        self.add_log("", f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         ### initialize board for play
         # choose location for '1'
         rand_x: int = randint(0, self.size - 1)
@@ -171,6 +188,8 @@ class Level1(Game):
         # make the move
         self.cells[x][y] = value
         self.last_move = (x, y)
+        self.cur_move += 1
+        self.add_log("move", f"Placed {value} in space ({x},{y}).")
         return Move_result(True)
     
 
@@ -188,6 +207,7 @@ class Level2(Game):
         # inherit values from the level1 board
         self.score = base_game.score
         self.level = 2
+        self.log = base_game.log
         # carry over the values from the level 1 board
         for y in range(0, base_game.size):
             for x in range(0, base_game.size):
@@ -242,6 +262,7 @@ class Level2(Game):
         # make the move
         self.cells[x][y] = value
         self.played[value] = True
+        self.add_log("move", f"Placed {value} in space ({x},{y}).")
         return Move_result(True)
 
     def from_data(self, data) -> None:
@@ -258,6 +279,8 @@ class Game_loader():
         '''Saves a provided game object to a json text file with the provided name'''
         with open(f"saved_games/{name}.json", "wt") as outfile:
             dump(game.__dict__, outfile, indent=4)
+        with open(f"saved_games/{name}.log", "wt") as outfile:
+            outfile.writelines(game.log)
 
     def load_game(name: str) -> Game:
         '''loads a game board of the appropriate type from a json file'''
@@ -276,7 +299,8 @@ class Game_loader():
 
 
 if __name__ == "__main__":
-    newGame: Game = Level1(5)
+    name: str = input("please enter your name: ")
+    newGame: Game = Level1(name, 5)
 
     while True:
 
@@ -302,5 +326,7 @@ if __name__ == "__main__":
         if not place_result.success():
             print(place_result)
         
-        newGame.level_up()
+        lvl_up = newGame.level_up()
+        if lvl_up.success():
+            newGame = lvl_up.game_board()
         
