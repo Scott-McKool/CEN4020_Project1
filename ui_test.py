@@ -75,7 +75,7 @@ class lvl1gameWindow():
         self.currentScore = tk.Label(self.lvl1inputframe, text=f"Current score: {self.gameobj.score}")
         self.currentScore.grid(column=0, row=3, sticky='ew', padx=5, pady=5)
 
-        self.playersetButton = tk.Button(self.lvl1inputframe, text="Type player name and click here:", command=lambda: self.setPlayer())
+        self.playersetButton = tk.Button(self.lvl1inputframe, text="Type player name:", command=lambda: self.setPlayer())
         self.playersetButton.grid(column=0, row=5, sticky='ew', padx=5, pady=5)
 
         self.playersetEntry = tk.Entry(self.lvl1inputframe)
