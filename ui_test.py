@@ -4,7 +4,7 @@ from playsound import playsound
 from main import *
 
 class lvl1gameWindow():
-    gameobj: Game
+    gameobj: Level1
     root: tk.Tk
     lvl1gridframe: tk.Frame
     lvl1inputframe: tk.Frame
@@ -17,9 +17,16 @@ class lvl1gameWindow():
     valEntry: tk.Entry
     entryButton: tk.Button
     currentNum: tk.Label
+    saveButton: tk.Button
+    loadButton: tk.Button
+    undoButton: tk.Button
+    clearButton: tk.Button
+    currentScore: tk.Label
+    playersetButton: tk.Button
+    playersetEntry: tk.Entry
 
-    def __init__(self, game: Game):
-        self.gameobj = game
+    def __init__(self, level: Level1):
+        self.gameobj = level
         self.root = tk.Tk()
         self.root.title("Level 1")
         self.lvl1gridframe = tk.Frame(self.root, padx = 10, pady=10, borderwidth=1, relief="solid")
@@ -35,8 +42,11 @@ class lvl1gameWindow():
         self.lvl1inputframe.rowconfigure(1, weight=1)
         self.lvl1inputframe.rowconfigure(2, weight=1)
         self.lvl1inputframe.rowconfigure(3, weight=1)
+        self.lvl1inputframe.rowconfigure(4, weight=1)
+        self.lvl1inputframe.rowconfigure(5, weight=1)
         self.lvl1inputframe.columnconfigure(0, weight=1)
         self.lvl1inputframe.columnconfigure(1, weight=1)
+        self.lvl1inputframe.columnconfigure(2, weight=1)
 
         self.rowLabel = tk.Label(self.lvl1inputframe, text="Enter row: ")
         self.rowLabel.grid(column=0, row=0, sticky='e', padx=5, pady=5)
@@ -57,10 +67,31 @@ class lvl1gameWindow():
         self.valEntry.grid(column=1, row=2, sticky='ew', padx=5, pady=5)
 
         self.entryButton = tk.Button(self.lvl1inputframe, text="Place Number", command=lambda: self.GUIplace())
-        self.entryButton.grid(column=0, row=3, sticky='w', padx=5, pady=5)
+        self.entryButton.grid(column=2, row=4, sticky='w', padx=5, pady=5)
 
         self.currentNum = tk.Label(self.lvl1inputframe, text=f"Next number: {self.gameobj.cur_move}")
         self.currentNum.grid(column=1, row=3, sticky='ew', padx=5, pady=5)
+
+        self.currentScore = tk.Label(self.lvl1inputframe, text=f"Current score: {self.gameobj.score}")
+        self.currentScore.grid(column=0, row=3, sticky='ew', padx=5, pady=5)
+
+        self.playersetButton = tk.Button(self.lvl1inputframe, text="Type player name and click here:", command=lambda: self.setPlayer())
+        self.playersetButton.grid(column=0, row=5, sticky='ew', padx=5, pady=5)
+
+        self.playersetEntry = tk.Entry(self.lvl1inputframe)
+        self.playersetEntry.grid(column=1, row=5, sticky='ew', padx=5, pady=5)
+
+        self.saveButton = tk.Button(self.lvl1inputframe, text="Save Game", command=lambda: self.saveGUI())
+        self.saveButton.grid(column=2, row=0, sticky='ew', padx=5, pady=5)
+
+        self.loadButton = tk.Button(self.lvl1inputframe, text="Load Game", command=lambda: self.LoadGUI())
+        self.loadButton.grid(column=2, row=1, sticky='ew', padx=5, pady=5)
+
+        self.undoButton = tk.Button(self.lvl1inputframe, text="Undo Move", command=lambda: self.undoGUI())
+        self.undoButton.grid(column=2, row=2, sticky='ew', padx=5, pady=5)
+
+        self.clearButton = tk.Button(self.lvl1inputframe, text="Clear Board", command=lambda: self.clearGUI())
+        self.clearButton.grid(column=2, row=3, sticky='ew', padx=5, pady=5)
 
         self.gamegridGUI()
 
@@ -68,6 +99,7 @@ class lvl1gameWindow():
 
     def gamegridInit(self):
         self.lvl1gridframe.grid = []
+        self.lvl1grid = []
         for i in range(5):
             row = []
             for j in range(5):
@@ -108,11 +140,10 @@ class lvl1gameWindow():
 
         if placeRes.success():
             playsound.playsound("correct.mp3")
-            self.gameobj.cur_move += 1
         elif not placeRes.success():
             playsound.playsound("wrong.mp3")
             errorwindow = tk.Tk()
-            errormessage = tk.Label(errorwindow, text="Error: invalid placement", padx=5, pady=5)
+            errormessage = tk.Label(errorwindow, text=f"Error: {placeRes.description()}", padx=5, pady=5)
             errormessage.pack()
             errorwindow.mainloop()
 
@@ -122,52 +153,80 @@ class lvl1gameWindow():
             self.gamegridGUI()
             playsound.playsound("correct.mp3")
             winwindow = tk.Tk()
-            winmessage = tk.Label(winwindow, text="You Win!", padx=5, pady=5)
+            winmessage = tk.Label(winwindow, text="You win level 1! Now onto Level 2...", padx=5, pady=5)
             winmessage.pack()
             winwindow.mainloop()
             return
 
         self.gamegridGUI()
 
+    def setPlayer(self):
+        self.gameobj.player = self.playersetEntry.get()
+
+    def saveGUI(self):
+        saveWindow = tk.Tk()
+        saveWindow.rowconfigure(0, weight=1)
+        saveWindow.rowconfigure(1, weight=2)
+        saveWindow.columnconfigure(0, weight=1)
+        saveWindow.columnconfigure(1, weight=1)
+
+        saveLabel = tk.Label(saveWindow, text="Enter file name (without extension):", padx=5, pady=5)
+        saveLabel.grid(row=0, column=0, sticky='ew', padx=5, pady=5)
+
+        saveEntry = tk.Entry(saveWindow)
+        saveEntry.grid(row=0, column=1, sticky='ew', padx=5, pady=5)
+
+        saveBut = tk.Button(saveWindow, text="Save", padx=5, pady=5, command=lambda: Game_loader.save_game(self.gameobj, saveEntry.get()))
+        saveBut.grid(row=1, column=0, sticky='ew', padx=5, pady=5)
+
+        saveWindow.mainloop()
+
+    def LoadGUI(self):
+        loadWindow = tk.Tk()
+        loadWindow.rowconfigure(0, weight=1)
+        loadWindow.rowconfigure(1, weight=2)
+        loadWindow.columnconfigure(0, weight=1)
+        loadWindow.columnconfigure(1, weight=1)
+
+        loadLabel = tk.Label(loadWindow, text="Enter file name (without extension):", padx=5, pady=5)
+        loadLabel.grid(row=0, column=0, sticky='ew', padx=5, pady=5)
+
+        loadEntry = tk.Entry(loadWindow)
+        loadEntry.grid(row=0, column=1, sticky='ew', padx=5, pady=5)
+
+        loadBut = tk.Button(loadWindow, text="Load", padx=5, pady=5, command=lambda: self.helperloadGUI(loadEntry.get()))
+        loadBut.grid(row=1, column=0, sticky='ew', padx=5, pady=5)
+
+        loadWindow.mainloop()
+
+    def helperloadGUI(self, loadEntry: str):
+        self.gameobj = Game_loader.load_game(loadEntry)
+        self.gamegridGUI()
+
+    def undoGUI(self):
+        undoobj = self.gameobj.undo()
+        if undoobj.success() != True:
+            errorwindow = tk.Tk()
+            errormessage = tk.Label(errorwindow, text=f"Cannot undo.", padx=5, pady=5)
+            errormessage.pack()
+            errorwindow.mainloop()
+
+        self.gamegridInit()
+        self.gamegridGUI()
+
+    def clearGUI(self):
+        self.gameobj.clear()
+        self.gamegridInit()
+        self.gamegridGUI()
+
     def __del__(self):
         self.root.quit()
 
 if __name__ == "__main__":
-    newGame: Game = Level1(5)
-    newGame = Game_loader.load_game("late_game")
+    newGame: Level1 = Level1("player1", 5)
 
     gameGUI: lvl1gameWindow = lvl1gameWindow(newGame)
 
     while True:
-
-        # print(newGame)
-        # in_str: str = input("enter your move 'x y value' (s=save, l=load, q=quit):")
-
-        # if in_str == "q":
-        #     exit()
-
-        # if in_str == "s":
-        #     in_str = input("Choose a filename for your game: ")
-        #     Game_loader.save_game(newGame, in_str)
-        #     continue
-
-        # if in_str == "l":
-        #     in_str = input("type the game file to load: ")
-        #     newGame = Game_loader.load_game(in_str)
-        #     continue
-
-        # x, y, value = lvl1gameWindow.valReturn()
-        # place_result: Move_result = newGame.place(x, y, value)
-
-        # if place_result.success():
-        #     playsound.playsound("correct.mp3", block=False)
-        # elif not place_result.success():
-        #     playsound.playsound("wrong.mp3", block=False)
-        #     errorwindow = tk.Tk()
-        #     errormessage = tk.Label(errorwindow, text="Error: invalid placement", padx=5, pady=5)
-        #     errormessage.pack()
-        #     errorwindow.mainloop()
-        
-        
 
         gameGUI.gamegridGUI()

@@ -1,5 +1,6 @@
 #!./venv/bin/python3
 from __future__ import annotations
+from datetime import datetime
 from json import load, dump
 from random import randint
 import playsound
@@ -60,16 +61,25 @@ class Game:
     size : int
     score: int
     level: int
+    log  : list[str]
+    player: str
     cur_move: int
+    diagflag: bool
     def __init__(self, size: int):
         self.cur_move = 2
         self.level = None
         self.size = size
         self.score = 0
+        self.log = list()
         # init cell values 
         self.cells = [[0]*size for _ in range(size)]
+        self.diagflag = False
+        self.next_number = 2 # L1 begins 
+        self.move_stack = [] # undo
+        self.one_p = None # initial positions of x and y
+        self.log = []
     
-    def place(self, x: int, y: int, value: int) -> Move_result:
+    def place(self, x: int, y: int, value: int = None) -> Move_result:
         '''Attempt to place a value at a given coordinate within the rules of the game. x and y are index values'''
         # make sure coords are in-bounds
         if x >= self.size or y >= self.size or x < 0 or y < 0:
@@ -79,9 +89,22 @@ class Game:
         if self.cells[x][y] != 0:
             return Move_result(False, "Space is already filled.")
         
-        # ok to proceed
-        return Move_result(True)
+        move_hist = { "x": x, "y": y, "prev_cell" : self.cells[x][y], 
+                     "prev_score": self.score, "next": self.cur_move
+        }
         
+        self.move_stack.append(move_hist)
+        placed = self.cur_move
+        self.cells[x][y] = placed
+        if placed == 1:
+            self.last_move = (x,y)
+
+        # self.cur_move += 1
+
+        # ok to proceed
+        return Move_result(True, f"Value placed {placed}")
+        
+
     def level_up(self) -> Level_up_result:
         '''Attempt to premote the game board to the next level'''
         # make sure all cells are filled
@@ -89,7 +112,7 @@ class Game:
             for cell in row:
                 if cell == 0:
                     return Level_up_result(None, "All spaces must be filled before moving to the next level")
-        
+
         # is premotion possible?
         if Game_loader.levels[self.level + 1]:
             # make a new game object based on this game, at the next higher level
@@ -97,6 +120,7 @@ class Game:
             # make new instance of the required type
             # the type will alsways be lvl2 or more, and take a lower level game as its argument
             new_game: Game = cls(self)
+            new_game.add_log("level up", f"leveled up from level {self.level} to level {new_game.level}")
             return Level_up_result(new_game, f"Premoted from level {self.level} to level {new_game.level}") 
         else:
             return Level_up_result(None, "Game is already at max level")
@@ -108,8 +132,9 @@ class Game:
         self.size  = data["size"]
         self.score = data["score"]
         self.level = data["level"]
+        self.player= data["player"]
+        self.log   = data["log"]
         self.cur_move  = data["cur_move"]
-
 
     def __str__(self):
         result: str = ""
@@ -132,19 +157,92 @@ class Game:
         result += f"\n\nScore: {self.score}"
         
         return result
+    
+    def get(self, x: int, y:int) -> int:
+        return self.cells[x][y] # retrieve (x,y) numbers
+    
+    def set(self, x:int, y:int, value: int):
+        self.cells[x][y] = value # set numbers at cell (x,y)
+    
+    # undo move
+    def undo(self):
+        if not self.move_stack:
+            return Move_result(False, "Cannot undo.")
+        
+        prev = self.move_stack.pop()
+        self.set(prev["x"], prev["y"], prev["prev_cell"])
+        self.score = prev["prev_score"]
+        self.cur_move = prev["next"]
+
+        return Move_result(True, f"Undo successful. Next value is {self.cur_move}")
+    
+    
+    def add_log(self, category: str, description):
+        self.log.append(f"Category: {category} {description}\n")
+
+
+    def clear(self) -> Move_result:
+        ''' Clearing the board, but 1 stays in its main position. 1 does not get cleared'''
+
+        # L1 board clearing
+        if self.level == 1:
+            try: 
+                if self.last_move is None:
+                    return Move_result(False, "Unable to clear, value 1 position not found.")
+            except AttributeError:
+                return Move_result(False, "Unable to clear, value 1 position not found.")
+        
+            # clearing thr grid
+            for i in range(self.size):
+                for t in range(self.size):
+                    self.set(i, t, 0)
+
+        # setting original position of number '1'
+            first_x, first_y = self.one_p
+            self.set(first_x, first_y, 1)
+
+            # reset
+            self.cur_move = 2
+            self.score = 0
+            self.move_stack.clear()
+
+            return Move_result(True, "Board is now clear for Level 1.")
+
+        # L2 board clearing
+        if self.level == 2:
+            # clearing edge cells on the 7x7
+            for i in range(self.size):
+                for t in range(self.size):
+                    border = (i == 0 or i == self.size - 1 or t == 0 or t == self.size - 1)
+                    if border:
+                        self.set(i, t, 0)
+                        
+            # start value at level 2
+            self.cur_move = 2
+            self.move_stack.clear()
+            return Move_result(True, "Outer grid cleared. ")
+        
+        # 
+        return Move_result(False, f"Uknown Level --> {self.level} not available")
 
 
 class Level1(Game):
-    def __init__(self, size: int):
+    def __init__(self, player_name: str, size: int):
         super().__init__(size)
         self.level: int = 1
-
+        self.player = player_name
+        self.add_log("", f"Starting new Game:")
+        self.add_log("", f"Player name: {player_name}")
+        self.add_log("", f"Game started: {datetime.now()}")
+        self.add_log("", f"Level 1")
+        self.add_log("", f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         ### initialize board for play
         # choose location for '1'
         rand_x: int = randint(0, self.size - 1)
         rand_y: int = randint(0, self.size - 1)
         self.cells[rand_x][rand_y] = 1
         self.last_move = (rand_x, rand_y)
+        self.one_p = (rand_x, rand_y)
 
 
     def place(self, x: int, y: int, value: int = None) -> Move_result:
@@ -169,14 +267,14 @@ class Level1(Game):
             value = self.cur_move
             self.cur_move += 1
         elif value != self.cur_move:
-            return Move_result(False, "Move's value must be 1 greater than its predecesor.")
+            return Move_result(False, f"Move's value must be 1 greater than its predecesor. {value} != {self.cur_move}")
 
         # make the move
         self.cells[x][y] = value
         self.last_move = (x, y)
+        self.cur_move += 1
+        self.add_log("move", f"Placed {value} in space ({x},{y}).")
         return Move_result(True)
-    
-
 
     def from_data(self, data) -> None:
         self.last_move = data["last_move"]
@@ -191,6 +289,7 @@ class Level2(Game):
         # inherit values from the level1 board
         self.score = base_game.score
         self.level = 2
+        self.log = base_game.log
         # carry over the values from the level 1 board
         for y in range(0, base_game.size):
             for x in range(0, base_game.size):
@@ -245,6 +344,7 @@ class Level2(Game):
         # make the move
         self.cells[x][y] = value
         self.played[value] = True
+        self.add_log("move", f"Placed {value} in space ({x},{y}).")
         return Move_result(True)
 
     def from_data(self, data) -> None:
@@ -261,6 +361,8 @@ class Game_loader():
         '''Saves a provided game object to a json text file with the provided name'''
         with open(f"saved_games/{name}.json", "wt") as outfile:
             dump(game.__dict__, outfile, indent=4)
+        with open(f"saved_games/{name}.log", "wt") as outfile:
+            outfile.writelines(game.log)
 
     def load_game(name: str) -> Game:
         '''loads a game board of the appropriate type from a json file'''
@@ -278,7 +380,8 @@ class Game_loader():
 
 
 if __name__ == "__main__":
-    newGame: Game = Level1(5)
+    name: str = input("please enter your name: ")
+    newGame: Game = Level1(name, 5)
 
     while True:
 
@@ -307,5 +410,7 @@ if __name__ == "__main__":
             playsound.playsound("wrong.mp3", block=False)
             print(place_result)
         
-        newGame.level_up()
+        lvl_up = newGame.level_up()
+        if lvl_up.success():
+            newGame = lvl_up.game_board()
         
