@@ -1,0 +1,141 @@
+{
+    "cur_move": 13,
+    "level": 1,
+    "size": 5,
+    "score": 4,
+    "log": [
+        "[] Starting new Game:\n",
+        "[] Player name: batman\n",
+        "[] Game started: 2026-02-09 04:45:29.968275\n",
+        "[] Level 1\n",
+        "[] ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n",
+        "[move] Placed 2 in space (0,0).\n",
+        "[move] Placed 3 in space (0,1).\n",
+        "[move] Placed 4 in space (1,2).\n",
+        "[move] Placed 5 in space (0,3).\n",
+        "[move] Placed 6 in space (0,4).\n",
+        "[move] Placed 7 in space (1,4).\n",
+        "[move] Placed 8 in space (2,3).\n",
+        "[move] Placed 9 in space (3,4).\n",
+        "[move] Placed 10 in space (4,4).\n",
+        "[move] Placed 11 in space (4,3).\n",
+        "[move] Placed 12 in space (3,3).\n",
+        "[undo] Removed 12 from (3,3)\n",
+        "[undo] Removed 11 from (4,3)\n",
+        "[undo] Removed 10 from (4,4)\n",
+        "[move] Placed 10 in space (3,3).\n",
+        "[move] Placed 11 in space (4,3).\n",
+        "[move] Placed 12 in space (4,4).\n",
+        "[Save] Game saved at 2026-02-09 04:45:49.230190\n"
+    ],
+    "history": [
+        [
+            4,
+            4,
+            12,
+            4
+        ],
+        [
+            4,
+            3,
+            11,
+            4
+        ],
+        [
+            3,
+            3,
+            10,
+            4
+        ],
+        [
+            3,
+            4,
+            9,
+            3
+        ],
+        [
+            2,
+            3,
+            8,
+            2
+        ],
+        [
+            1,
+            4,
+            7,
+            2
+        ],
+        [
+            0,
+            4,
+            6,
+            2
+        ],
+        [
+            0,
+            3,
+            5,
+            1
+        ],
+        [
+            1,
+            2,
+            4,
+            0
+        ],
+        [
+            0,
+            1,
+            3,
+            0
+        ],
+        [
+            0,
+            0,
+            2,
+            0
+        ]
+    ],
+    "cells": [
+        [
+            2,
+            3,
+            0,
+            5,
+            6
+        ],
+        [
+            1,
+            0,
+            4,
+            0,
+            7
+        ],
+        [
+            0,
+            0,
+            0,
+            8,
+            0
+        ],
+        [
+            0,
+            0,
+            0,
+            10,
+            9
+        ],
+        [
+            0,
+            0,
+            0,
+            11,
+            12
+        ]
+    ],
+    "player": "batman",
+    "last_move": [
+        4,
+        4
+    ]
+}

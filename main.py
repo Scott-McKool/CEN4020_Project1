@@ -90,6 +90,7 @@ class Game:
         return Move_result(True)
 
     def change_cell(self, x: int, y: int, value):
+        '''Update the value of a cell'''
         self.cells[x][y] = value
         self.cur_move += 1
         self.add_log("move", f"Placed {value} in space ({x},{y}).")
@@ -98,10 +99,12 @@ class Game:
     def undo(self):
         '''reverses the most recent move in the history'''
         last_move: tuple
+        # if there are any moves to reverse
         if len(self.history):
             last_move = self.history.pop(0)
         else:
             return None
+        # reverse the move
         self.cur_move -= 1
         self.score = last_move[3]
         self.cells[last_move[0]][last_move[1]] = 0
@@ -117,6 +120,7 @@ class Game:
             self.undo()
 
     def add_log(self, category: str, description):
+        '''Add an entry to the game's log'''
         self.log.append(f"[{category}] {description}\n")    
     
     def level_up(self) -> Level_up_result:
@@ -134,21 +138,24 @@ class Game:
             # make new instance of the required type
             # the type will alsways be lvl2 or more, and take a lower level game as its argument
             new_game: Game = cls(self)
-            new_game.add_log("level up", f"leveled up from level {self.level} to level {new_game.level}")
+            new_game.add_log("level up", f"leveled up from level {self.level} to level {new_game.level}, with a score of {self.score}.")
+            Game_loader.save_game(self, f"{self.player}")
             return Level_up_result(new_game, f"Premoted from level {self.level} to level {new_game.level}") 
         else:
+            self.add_log("Game Finished", f"Game finished with a score of {self.score}")
+            Game_loader.save_game(self, f"{self.player}")
             return Level_up_result(None, "Game is already at max level")
 
 
     def from_data(self, data: dict) -> None:
         '''Populate the object's atributes from a dictionary'''
-        self.cells = data["cells"]
-        self.size  = data["size"]
-        self.score = data["score"]
-        self.level = data["level"]
-        self.player= data["player"]
-        self.log   = data["log"]
-        self.history=data["history"]
+        self.cells   = data["cells"]
+        self.size    = data["size"]
+        self.score   = data["score"]
+        self.level   = data["level"]
+        self.player  = data["player"]
+        self.log     = data["log"]
+        self.history = data["history"]
         self.cur_move  = data["cur_move"]
 
     def __str__(self):
@@ -179,6 +186,7 @@ class Level1(Game):
         super().__init__(size)
         self.level: int = 1
         self.player = player_name
+        # add a header to the log
         self.add_log("", f"Starting new Game:")
         self.add_log("", f"Player name: {player_name}")
         self.add_log("", f"Game started: {datetime.now()}")
@@ -214,11 +222,6 @@ class Level1(Game):
         if not predecessor:
             return Move_result(False, "Move must be a neighbor of its predececcor.")
 
-        # asses score for the move (is move place on a diagonal)
-        dx, dy = predecessor
-        if dx == dy:
-            self.score += 1
-
         # make sure value is correct (ascending order)
         if not value:
             value = self.cur_move
@@ -229,9 +232,14 @@ class Level1(Game):
         # make the move
         self.last_move = (x, y)
         self.change_cell(x, y, value)
+
+        # asses score for the move (is move place on a diagonal)
+        dx, dy = predecessor
+        if dx == dy:
+            self.score += 1
+
         return Move_result(True)
     
-
 
     def from_data(self, data) -> None:
         self.last_move = data["last_move"]
@@ -305,6 +313,7 @@ class Level2(Game):
 
     def undo(self):
         undone_move = super().undo()
+        # also update played[] for level 2
         if undone_move:
             self.played[undone_move[2]] = False
 
@@ -321,6 +330,8 @@ class Game_loader():
         
     def save_game(game: Game, name: str):
         '''Saves a provided game object to a json text file with the provided name'''
+        game.add_log("Save", f"Game saved at {datetime.now()}")
+        # save a json and log file
         with open(f"saved_games/{name}.json", "wt") as outfile:
             dump(game.__dict__, outfile, indent=4)
         with open(f"saved_games/{name}.log", "wt") as outfile:
@@ -338,19 +349,24 @@ class Game_loader():
                 obj = cls.__new__(cls)
                 # populate the required data
                 obj.from_data(data)
+                obj.add_log("Load", f"game loaded at {datetime.now()}")
                 return obj
 
 
 
 if __name__ == "__main__":
+    # used for testing, play the game on the terminal
+
     name: str = input("please enter your name: ")
     newGame: Game = Level1(name, 5)
 
     while True:
-
+        # display board
         print(newGame)
+        # take input
         in_str: str = input("enter your move 'x y value' (s=save, l=load, q=quit):")
 
+        # parse input
         if in_str == "q":
             exit()
 
@@ -365,11 +381,14 @@ if __name__ == "__main__":
             continue
 
         x, y, val = in_str.split(" ")
+        # make the move
         place_result: Move_result = newGame.place(int(x)-1, int(y)-1, int(val))
 
+        # send feedback
         if not place_result.success():
             print(place_result)
         
+        # check for level up
         lvl_up = newGame.level_up()
         if lvl_up.success():
             newGame = lvl_up.game_board()
