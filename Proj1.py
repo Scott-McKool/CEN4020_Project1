@@ -212,9 +212,8 @@ class lvl1gameWindow():
         self.gameobj = Game_loader.load_game(loadEntry)
         if self.gameobj.level == 2:
             lvl2gameGUI: lvl2gameWindow = lvl2gameWindow(self.gameobj)
-        else:
-            self.gamegridInit()
-            self.gamegridGUI()
+        self.gamegridInit()
+        self.gamegridGUI()
 
     def undoGUI(self):
         undoobj = self.gameobj.undo()
