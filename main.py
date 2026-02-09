@@ -61,14 +61,17 @@ class Game:
     score: int
     level: int
     log  : list[str]
-    player: str
+    player  : str
     cur_move: int
+    history : list[tuple[int, int, int]]
+
     def __init__(self, size: int):
         self.cur_move = 2
         self.level = None
         self.size = size
         self.score = 0
         self.log = list()
+        self.history = list()
         # init cell values 
         self.cells = [[0]*size for _ in range(size)]
         # add header to log
@@ -86,6 +89,33 @@ class Game:
         # ok to proceed
         return Move_result(True)
 
+    def change_cell(self, x: int, y: int, value):
+        self.cells[x][y] = value
+        self.cur_move += 1
+        self.add_log("move", f"Placed {value} in space ({x},{y}).")
+        self.history.insert(0, (x, y, value, self.score))
+
+    def undo(self):
+        '''reverses the most recent move in the history'''
+        last_move: tuple
+        if len(self.history):
+            last_move = self.history.pop(0)
+        else:
+            return None
+        self.cur_move -= 1
+        self.score = last_move[3]
+        self.cells[last_move[0]][last_move[1]] = 0
+        self.add_log("undo", f"Removed {last_move[2]} from ({last_move[0]},{last_move[1]})")
+        return last_move
+
+    def clear(self):
+        '''reverses every move in the history'''
+        if not len(self.history):
+            return
+        self.add_log("clear", "clearing history")
+        while len(self.history):
+            self.undo()
+
     def add_log(self, category: str, description):
         self.log.append(f"[{category}] {description}\n")    
     
@@ -98,7 +128,7 @@ class Game:
                     return Level_up_result(None, "All spaces must be filled before moving to the next level")
         
         # is premotion possible?
-        if Game_loader.levels[self.level + 1]:
+        if (self.level + 1) <= len(Game_loader.levels):
             # make a new game object based on this game, at the next higher level
             cls = Game_loader.levels[self.level + 1]
             # make new instance of the required type
@@ -118,6 +148,7 @@ class Game:
         self.level = data["level"]
         self.player= data["player"]
         self.log   = data["log"]
+        self.history=data["history"]
         self.cur_move  = data["cur_move"]
 
     def __str__(self):
@@ -167,14 +198,24 @@ class Level1(Game):
         if not basic_checks.success():
             return basic_checks
 
-        # make sure space is the neighbor of its predecessor
-        dx = abs(self.last_move[0] - x)
-        dy = abs(self.last_move[1] - y)
+        # check 3x3 area arround the move
+        u: int = max(x - 1, 0)
+        v: int = max(y - 1, 0)
+        w: int = min(x + 1, self.size - 1)
+        h: int = min(y + 1, self.size - 1)
 
-        if dx > 1 or dy > 1:
+        # look for predecessor in 3x3 area
+        predecessor = None
+        for i in range(u, w + 1):
+            for j in range(v, h + 1):
+                if self.cells[i][j] == value - 1:
+                    predecessor = (abs(x-i), abs(y-j))
+
+        if not predecessor:
             return Move_result(False, "Move must be a neighbor of its predececcor.")
-        
+
         # asses score for the move (is move place on a diagonal)
+        dx, dy = predecessor
         if dx == dy:
             self.score += 1
 
@@ -186,10 +227,8 @@ class Level1(Game):
             return Move_result(False, "Move's value must be 1 greater than its predecesor.")
 
         # make the move
-        self.cells[x][y] = value
         self.last_move = (x, y)
-        self.cur_move += 1
-        self.add_log("move", f"Placed {value} in space ({x},{y}).")
+        self.change_cell(x, y, value)
         return Move_result(True)
     
 
@@ -207,6 +246,7 @@ class Level2(Game):
         # inherit values from the level1 board
         self.score = base_game.score
         self.level = 2
+        self.player = base_game.player
         self.log = base_game.log
         # carry over the values from the level 1 board
         for y in range(0, base_game.size):
@@ -230,7 +270,6 @@ class Level2(Game):
             j += dy
         # could not find value
         return False
-
 
     def place(self, x: int, y: int, value: int = None) -> Move_result:
         # does the placement pass the basic checks?
@@ -260,14 +299,19 @@ class Level2(Game):
             return Move_result(False, "The number of the move and the number in the inner board must be on a straight line.")
 
         # make the move
-        self.cells[x][y] = value
         self.played[value] = True
-        self.add_log("move", f"Placed {value} in space ({x},{y}).")
+        self.change_cell(x, y, value)
         return Move_result(True)
+
+    def undo(self):
+        undone_move = super().undo()
+        if undone_move:
+            self.played[undone_move[2]] = False
 
     def from_data(self, data) -> None:
         super().from_data(data)
         self.played = data["played"]
+        
 
 class Game_loader():
     levels: dict = {
