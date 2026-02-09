@@ -384,8 +384,9 @@ class lvl2gameWindow():
             winwindow = tk.Tk()
             winmessage = tk.Label(winwindow, text="You win level 2, and the game!", padx=5, pady=5)
             winmessage.pack()
-            winwindow.mainloop()
             self.saveGUI()
+            winwindow.mainloop()
+            
 
         self.gamegridGUI()
 
