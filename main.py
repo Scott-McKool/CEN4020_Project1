@@ -138,7 +138,8 @@ class Game:
         self.move_stack = data["move_stack"]
         self.one_p = data["one_p"]
         self.next_number = data["next_number"]
-        self.played = data["played"]
+        if self.level == 2:
+            self.played = data["played"]
 
     def __str__(self):
         result: str = ""

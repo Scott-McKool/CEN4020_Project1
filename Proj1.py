@@ -212,6 +212,8 @@ class lvl1gameWindow():
         self.gameobj = Game_loader.load_game(loadEntry)
         if self.gameobj.level == 2:
             lvl2gameGUI: lvl2gameWindow = lvl2gameWindow(self.gameobj)
+        elif self.gameobj.level == 1:
+            lvl1gameGUI: lvl1gameWindow = lvl1gameWindow(self.gameobj)
         self.gamegridInit()
         self.gamegridGUI()
 
