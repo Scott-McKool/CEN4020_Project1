@@ -4,7 +4,7 @@ from playsound import playsound
 from main import *
 
 class lvl1gameWindow():
-    gameobj: Level1
+    gameobj: Game
     root: tk.Tk
     lvl1gridframe: tk.Frame
     lvl1inputframe: tk.Frame
@@ -25,8 +25,8 @@ class lvl1gameWindow():
     playersetButton: tk.Button
     playersetEntry: tk.Entry
 
-    def __init__(self, level: Level1):
-        self.gameobj = level
+    def __init__(self, game: Game):
+        self.gameobj = game
         self.root = tk.Tk()
         self.root.title("Level 1")
         self.lvl1gridframe = tk.Frame(self.root, padx = 10, pady=10, borderwidth=1, relief="solid")
@@ -155,6 +155,7 @@ class lvl1gameWindow():
             winwindow = tk.Tk()
             winmessage = tk.Label(winwindow, text="You win level 1! Now onto Level 2...", padx=5, pady=5)
             winmessage.pack()
+            self.saveGUI()
             winwindow.mainloop()
             return
 
@@ -201,6 +202,7 @@ class lvl1gameWindow():
 
     def helperloadGUI(self, loadEntry: str):
         self.gameobj = Game_loader.load_game(loadEntry)
+        self.gamegridInit()
         self.gamegridGUI()
 
     def undoGUI(self):
@@ -223,10 +225,10 @@ class lvl1gameWindow():
         self.root.quit()
 
 if __name__ == "__main__":
-    newGame: Level1 = Level1("player1", 5)
+    newGame: Game = Level1("player1", 5)
 
     gameGUI: lvl1gameWindow = lvl1gameWindow(newGame)
 
-    while True:
+    # while True:
 
-        gameGUI.gamegridGUI()
+    #     gameGUI.gamegridGUI()

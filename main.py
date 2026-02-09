@@ -229,6 +229,7 @@ class Game:
 class Level1(Game):
     def __init__(self, player_name: str, size: int):
         super().__init__(size)
+        self.move_stack = []
         self.level: int = 1
         self.player = player_name
         self.add_log("", f"Starting new Game:")
