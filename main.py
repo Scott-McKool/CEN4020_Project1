@@ -135,6 +135,10 @@ class Game:
         self.player= data["player"]
         self.log   = data["log"]
         self.cur_move  = data["cur_move"]
+        self.move_stack = data["move_stack"]
+        self.one_p = data["one_p"]
+        self.next_number = data["next_number"]
+        self.played = data["played"]
 
     def __str__(self):
         result: str = ""
@@ -170,7 +174,8 @@ class Game:
             return Move_result(False, "Cannot undo.")
         
         prev = self.move_stack.pop()
-        self.set(prev["x"], prev["y"], prev["prev_cell"])
+        self.played[self.cells[prev["x"]][prev["y"]]] = False
+        self.set(prev["x"], prev["y"], 0)
         self.score = prev["prev_score"]
         self.cur_move = prev["next"]
 
@@ -220,6 +225,7 @@ class Game:
             # start value at level 2
             self.cur_move = 2
             self.move_stack.clear()
+            self.played = [False] * (2 * (self.size + self.size))
             return Move_result(True, "Outer grid cleared. ")
         
         # 
@@ -288,6 +294,7 @@ class Level2(Game):
         size = base_game.size + 2
         super().__init__(size)
         # inherit values from the level1 board
+        self.move_stack = []
         self.score = base_game.score
         self.level = 2
         self.log = base_game.log
