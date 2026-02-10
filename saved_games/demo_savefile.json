@@ -1,0 +1,83 @@
+{
+    "cur_move": 4,
+    "level": 1,
+    "size": 5,
+    "score": 2,
+    "log": [
+        "Category:  Starting new Game:\n",
+        "Category:  Player name: player1\n",
+        "Category:  Game started: 2026-02-09 11:30:30.066100\n",
+        "Category:  Level 1\n",
+        "Category:  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n",
+        "Category: move Placed 2 in space (4,4).\n",
+        "Category: move Placed 3 in space (3,3).\n",
+        "Category: move Placed 4 in space (2,2).\n",
+        "Category: move Placed 4 in space (3,2).\n",
+        "Category: move Placed 2 in space (3,2).\n",
+        "Category: move Placed 3 in space (2,3).\n"
+    ],
+    "cells": [
+        [
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        [
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        [
+            0,
+            0,
+            0,
+            3,
+            0
+        ],
+        [
+            0,
+            0,
+            2,
+            0,
+            0
+        ],
+        [
+            0,
+            0,
+            0,
+            1,
+            0
+        ]
+    ],
+    "diagflag": false,
+    "next_number": 2,
+    "move_stack": [
+        {
+            "x": 3,
+            "y": 2,
+            "prev_cell": 0,
+            "prev_score": 0,
+            "next": 2
+        },
+        {
+            "x": 2,
+            "y": 3,
+            "prev_cell": 0,
+            "prev_score": 1,
+            "next": 3
+        }
+    ],
+    "one_p": [
+        4,
+        3
+    ],
+    "player": "demo_player",
+    "last_move": [
+        2,
+        3
+    ]
+}

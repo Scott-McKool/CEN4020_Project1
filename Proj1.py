@@ -150,6 +150,10 @@ class lvl1gameWindow():
             playsound.playsound("wrong.mp3")
             errorwindow = tk.Tk()
             errormessage = tk.Label(errorwindow, text=f"Error: {placeRes.description()}", padx=5, pady=5)
+            if placeRes.description() == "Move must be a neighbor of its predececcor.":
+                self.undoGUI()
+            elif placeRes.description() == "Space is already filled.":
+                self.undoGUI()
             errormessage.pack()
             errorwindow.mainloop()
 
@@ -161,10 +165,9 @@ class lvl1gameWindow():
             winwindow = tk.Tk()
             winmessage = tk.Label(winwindow, text="You win level 1! Now onto Level 2...", padx=5, pady=5)
             winmessage.pack()
-            winwindow.mainloop()
-
             self.gameobj = lvlupRes.game_board()
             lvl2gameGUI: lvl2gameWindow = lvl2gameWindow(self.gameobj)
+            winwindow.mainloop()
             return
 
         self.gamegridGUI()
@@ -212,8 +215,6 @@ class lvl1gameWindow():
         self.gameobj = Game_loader.load_game(loadEntry)
         if self.gameobj.level == 2:
             lvl2gameGUI: lvl2gameWindow = lvl2gameWindow(self.gameobj)
-        elif self.gameobj.level == 1:
-            lvl1gameGUI: lvl1gameWindow = lvl1gameWindow(self.gameobj)
         self.gamegridInit()
         self.gamegridGUI()
 
@@ -377,7 +378,7 @@ class lvl2gameWindow():
             errorwindow = tk.Tk()
             errormessage = tk.Label(errorwindow, text=f"Error: {placeRes.description()}", padx=5, pady=5)
             if placeRes.description() == "Space is already filled.":
-                self.undoGUI
+                self.undoGUI()
             errormessage.pack()
             errorwindow.mainloop()
 

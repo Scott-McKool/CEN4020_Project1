@@ -175,7 +175,8 @@ class Game:
             return Move_result(False, "Cannot undo.")
         
         prev = self.move_stack.pop()
-        self.played[self.cells[prev["x"]][prev["y"]]] = False
+        if self.level == 2:
+            self.played[self.cells[prev["x"]][prev["y"]]] = False
         self.set(prev["x"], prev["y"], 0)
         self.score = prev["prev_score"]
         self.cur_move = prev["next"]
