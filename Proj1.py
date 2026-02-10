@@ -152,8 +152,6 @@ class lvl1gameWindow():
             errormessage = tk.Label(errorwindow, text=f"Error: {placeRes.description()}", padx=5, pady=5)
             if placeRes.description() == "Move must be a neighbor of its predececcor.":
                 self.undoGUI()
-            elif placeRes.description() == "Space is already filled.":
-                self.undoGUI()
             errormessage.pack()
             errorwindow.mainloop()
 
