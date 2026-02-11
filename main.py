@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import datetime
 from json import load, dump
 from random import randint
-import playsound
 import tkinter as tk
 
 class Move_result:
@@ -66,6 +65,7 @@ class Game:
     cur_move: int
     diagflag: bool
     def __init__(self, size: int):
+        self.player = "null"
         self.cur_move = 2
         self.level = None
         self.size = size
@@ -89,9 +89,15 @@ class Game:
         if self.cells[x][y] != 0:
             return Move_result(False, "Space is already filled.")
         
-        move_hist = { "x": x, "y": y, "prev_cell" : self.cells[x][y], 
-                     "prev_score": self.score, "next": self.cur_move
-        }
+        if self.level == 1:
+            move_hist = { "x": x, "y": y, "prev_cell" : self.cells[x][y], 
+                        "prev_score": self.score, "next": self.cur_move, 
+                        "last_move": self.last_move
+            }
+        else:
+            move_hist = { "x": x, "y": y, "prev_cell" : self.cells[x][y], 
+                        "prev_score": self.score, "next": self.cur_move
+            }
         
         self.move_stack.append(move_hist)
         placed = self.cur_move
@@ -180,6 +186,8 @@ class Game:
         self.set(prev["x"], prev["y"], 0)
         self.score = prev["prev_score"]
         self.cur_move = prev["next"]
+        if self.level == 1:
+            self.last_move = prev["last_move"]
 
         return Move_result(True, f"Undo successful. Next value is {self.cur_move}")
     
@@ -212,6 +220,7 @@ class Game:
             self.cur_move = 2
             self.score = 0
             self.move_stack.clear()
+            self.last_move = self.one_p
 
             return Move_result(True, "Board is now clear for Level 1.")
 
@@ -265,6 +274,7 @@ class Level1(Game):
         dy = abs(self.last_move[1] - y)
 
         if dx > 1 or dy > 1:
+            self.undo()
             return Move_result(False, "Move must be a neighbor of its predececcor.")
         
         # asses score for the move (is move place on a diagonal)
@@ -332,6 +342,7 @@ class Level2(Game):
 
         # make sure number has not already been played
         if self.played[value]:
+            self.undo()
             return Move_result(False, "Each number may only be placed once.")
 
         # do checks for if value is present in the apropriate line
@@ -349,6 +360,7 @@ class Level2(Game):
         found_value = self._search_in_line(x, y, deltaX, deltaY, value)
 
         if found_value == False:
+            self.undo()
             return Move_result(False, "The number of the move and the number in the inner board must be on a straight line.")
 
         # make the move
@@ -389,38 +401,38 @@ class Game_loader():
                 return obj
 
 
-if __name__ == "__main__":
-    name: str = input("please enter your name: ")
-    newGame: Game = Level1(name, 5)
+# if __name__ == "__main__":
+#     name: str = input("please enter your name: ")
+#     newGame: Game = Level1(name, 5)
 
-    while True:
+#     while True:
 
-        print(newGame)
-        in_str: str = input("enter your move 'x y value' (s=save, l=load, q=quit):")
+#         print(newGame)
+#         in_str: str = input("enter your move 'x y value' (s=save, l=load, q=quit):")
 
-        if in_str == "q":
-            exit()
+#         if in_str == "q":
+#             exit()
 
-        if in_str == "s":
-            in_str = input("Choose a filename for your game: ")
-            Game_loader.save_game(newGame, in_str)
-            continue
+#         if in_str == "s":
+#             in_str = input("Choose a filename for your game: ")
+#             Game_loader.save_game(newGame, in_str)
+#             continue
 
-        if in_str == "l":
-            in_str = input("type the game file to load: ")
-            newGame = Game_loader.load_game(in_str)
-            continue
+#         if in_str == "l":
+#             in_str = input("type the game file to load: ")
+#             newGame = Game_loader.load_game(in_str)
+#             continue
 
-        x, y, val = in_str.split(" ")
-        place_result: Move_result = newGame.place(int(x)-1, int(y)-1, int(val))
+#         x, y, val = in_str.split(" ")
+#         place_result: Move_result = newGame.place(int(x)-1, int(y)-1, int(val))
 
-        if place_result.success():
-            playsound.playsound("correct.mp3", block=False)
-        elif not place_result.success():
-            playsound.playsound("wrong.mp3", block=False)
-            print(place_result)
+#         if place_result.success():
+#             playsound.playsound("correct.mp3", block=False)
+#         elif not place_result.success():
+#             playsound.playsound("wrong.mp3", block=False)
+#             print(place_result)
         
-        lvl_up = newGame.level_up()
-        if lvl_up.success():
-            newGame = lvl_up.game_board()
+#         lvl_up = newGame.level_up()
+#         if lvl_up.success():
+#             newGame = lvl_up.game_board()
         

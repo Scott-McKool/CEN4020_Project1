@@ -1,4 +1,2 @@
-1) Playsound:
-pip install setuptools
-pip install wheel
-pip install playsound
+1) simpleaudio:
+pip install -U --force git+https://github.com/cexen/py-simple-audio.git
