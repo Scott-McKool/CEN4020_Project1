@@ -9,19 +9,18 @@ class Result:
     .success() returns if the attempted action was successfull.\n
     .obj() returns either an object (if the action resuts in an object) or none.\n
     .description() returns a string that is a description of the result.'''
-    data: tuple[object | None, str]
-    def __init__(self, obj: object | None, description: str = "Description missing"):
+    data        : tuple[object, str]
+    successful  : bool
+
+    def __init__(self, obj: object, description: str = "Description missing"):
         self.data = (obj, description)
 
     def success(self) -> bool:
         '''Did the attempted action succeed?'''
-        if isinstance(self.data[0], Game):
-            return True
-        else:
-            return False
+        return self.successful
 
-    def obj(self) -> object | None:
-        '''The returned object, or none'''
+    def obj(self) -> object:
+        '''The returned object'''
         return self.data[0]
         
     def description(self) -> str:
@@ -34,7 +33,18 @@ class Result:
         
         if not self.success():
             return f"Unsuccessful: {self.description()}"
-        
+
+class Err(Result):
+    '''Error variant of a result.'''
+    def __init__(self, description = "Description missing"):
+        super().__init__(None, description)
+        self.successful = False
+
+class OK(Result):
+    ''''Successful variant of result'''
+    def __init__(self, obj = None, description = "Description missing"):
+        super().__init__(obj, description)
+        self.successful = True
 
 class Game:
     cells: list[list[int]]
@@ -62,14 +72,14 @@ class Game:
 
         # make sure coords are in-bounds
         if x >= self.size or y >= self.size or x < 0 or y < 0:
-            return Result(False, "Given coordinates are out of bounds.")
+            return Err("Given coordinates are out of bounds.")
         
         # make sure space in unnoccupied
         if self.cells[x][y] != 0:
-            return Result(False, "Space is already filled.")
+            return Err("Space is already filled.")
         
         # ok to proceed
-        return Result(True)
+        return OK()
 
     def place(self, x: int, y: int, value):
         '''Places a value at a cell'''
@@ -78,7 +88,7 @@ class Game:
         self.cur_move += 1
         self.history.insert(0, (x, y, value, self.score))
         self.add_log("move", f"Placed {value} in space ({x},{y}).")
-        return Result(True)
+        return OK()
 
     def undo(self):
         '''reverses the most recent move in the history'''
@@ -114,7 +124,7 @@ class Game:
         for row in self.cells:
             for cell in row:
                 if cell == 0:
-                    return Result(None, "All spaces must be filled before moving to the next level")
+                    return Err("All spaces must be filled before moving to the next level")
         
         # is premotion possible?
         if (self.level + 1) <= len(Game_loader.levels):
@@ -125,11 +135,11 @@ class Game:
             new_game: Game = cls(self)
             new_game.add_log("level up", f"leveled up from level {self.level} to level {new_game.level}, with a score of {self.score}.")
             Game_loader.save_game(self, f"{self.player}")
-            return Result(new_game, f"Premoted from level {self.level} to level {new_game.level}") 
+            return OK(new_game, f"Premoted from level {self.level} to level {new_game.level}") 
         else:
             self.add_log("Game Finished", f"Game finished with a score of {self.score}")
             Game_loader.save_game(self, f"{self.player}")
-            return Result(None, "Game is already at max level")
+            return Err("Game is already at max level")
 
 
     def from_data(self, data: dict) -> None:
@@ -184,7 +194,6 @@ class Level1(Game):
         self.cells[rand_x][rand_y] = 1
         self.last_move = (rand_x, rand_y)
 
-
     def place(self, x: int, y: int, value: int = None) -> Result:
         # does the placement pass the basic checks?
         basic_checks = super().can_place(x, y, value)
@@ -205,14 +214,14 @@ class Level1(Game):
                     predecessor = (abs(x-i), abs(y-j))
 
         if not predecessor:
-            return Result(False, "Move must be a neighbor of its predececcor.")
+            return Err("Move must be a neighbor of its predececcor.")
 
         # make sure value is correct (ascending order)
         if not value:
             value = self.cur_move
             self.cur_move += 1
         elif value != self.cur_move:
-            return Result(False, "Move's value must be 1 greater than its predecesor.")
+            return Err("Move's value must be 1 greater than its predecesor.")
 
         # make the move
         self.last_move = (x, y)
@@ -272,7 +281,7 @@ class Level2(Game):
 
         # make sure number has not already been played
         if self.played[value]:
-            return Result(False, "Each number may only be placed once.")
+            return Err("Each number may only be placed once.")
 
         # do checks for if value is present in the apropriate line
         found_value: bool
@@ -289,7 +298,7 @@ class Level2(Game):
         found_value = self._search_in_line(x, y, deltaX, deltaY, value)
 
         if found_value == False:
-            return Result(False, "The number of the move and the number in the inner board must be on a straight line.")
+            return Err("The number of the move and the number in the inner board must be on a straight line.")
 
         # make the move
         self.played[value] = True
@@ -321,20 +330,26 @@ class Game_loader():
         with open(f"saved_games/{name}.log", "wt") as outfile:
             outfile.writelines(game.log)
 
-    def load_game(name: str) -> Game:
+    def load_game(name: str) -> Result:
         '''loads a game board of the appropriate type from a json file'''
         obj: Game
-        with open(f"saved_games/{name}.json") as infile:
-            data = load(infile)
+        try:
+            with open(f"saved_games/{name}.json") as infile:
+                data = load(infile)
+        except FileNotFoundError as e:
+            return Err(f"{e}")
         
-        for key, cls in Game_loader.levels.items():
-            if data["level"] == key:
-                # make new instance of the required type
-                obj = cls.__new__(cls)
-                # populate the required data
-                obj.from_data(data)
-                obj.add_log("Load", f"game loaded at {datetime.now()}")
-                return obj
+        try:
+            for key, cls in Game_loader.levels.items():
+                if data["level"] == key:
+                    # make new instance of the required type
+                    obj = cls.__new__(cls)
+                    # populate the required data
+                    obj.from_data(data)
+                    obj.add_log("Load", f"game loaded at {datetime.now()}")
+                    return obj
+        except KeyError as e:
+            return Err(f"{e}")
 
 
 
