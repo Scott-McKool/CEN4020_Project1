@@ -41,7 +41,7 @@ class Err(Result):
         self.successful = False
 
 class OK(Result):
-    ''''Successful variant of result'''
+    ''''Successful variant of result.'''
     def __init__(self, obj = None, description = "Description missing"):
         super().__init__(obj, description)
         self.successful = True
@@ -57,9 +57,9 @@ class Game:
     history : list[tuple[int, int, int]]
 
     def __init__(self, size: int):
-        self.cur_move = 2
-        self.level = None
         self.size = size
+        self.level = None
+        self.cur_move = 2
         self.score = 0
         self.log = list()
         self.history = list()
@@ -90,7 +90,7 @@ class Game:
         self.add_log("move", f"Placed {value} in space ({x},{y}).")
         return OK()
 
-    def undo(self):
+    def undo(self) -> Result:
         '''reverses the most recent move in the history'''
 
         last_move: tuple
@@ -98,13 +98,13 @@ class Game:
         if len(self.history):
             last_move = self.history.pop(0)
         else:
-            return None
+            return Err("No Moves to undo.")
         # reverse the move, decriment last move, restore score, and remove value from x, y
         self.cur_move -= 1
         self.score = last_move[3]
         self.cells[last_move[0]][last_move[1]] = 0
         self.add_log("undo", f"Removed {last_move[2]} from ({last_move[0]},{last_move[1]})")
-        return last_move
+        return OK(last_move)
 
     def clear(self):
         '''reverses every move in the history'''
@@ -194,12 +194,13 @@ class Level1(Game):
         self.cells[rand_x][rand_y] = 1
         self.last_move = (rand_x, rand_y)
 
-    def place(self, x: int, y: int, value: int = None) -> Result:
+    def can_place(self, x: int, y: int, value: int):
+
         # does the placement pass the basic checks?
         basic_checks = super().can_place(x, y, value)
         if not basic_checks.success():
             return basic_checks
-
+        
         # check 3x3 area arround the move
         u: int = max(x - 1, 0)
         v: int = max(y - 1, 0)
@@ -207,32 +208,36 @@ class Level1(Game):
         h: int = min(y + 1, self.size - 1)
 
         # look for predecessor in 3x3 area
-        predecessor = None
+        found_prev = False
         for i in range(u, w + 1):
             for j in range(v, h + 1):
                 if self.cells[i][j] == value - 1:
-                    predecessor = (abs(x-i), abs(y-j))
+                    found_prev = True
 
-        if not predecessor:
+        if not found_prev:
             return Err("Move must be a neighbor of its predececcor.")
 
         # make sure value is correct (ascending order)
+        if value:
+            if value != self.cur_move:
+                return Err("Move's value must be 1 greater than its predecesor.")
+
+        # ok to proceed
+        return OK()
+
+    def place(self, x: int, y: int, value: int = None) -> Result:
+        '''Attempt to place the value [value] at coordinates ([x], [y])'''
+
         if not value:
             value = self.cur_move
-            self.cur_move += 1
-        elif value != self.cur_move:
-            return Err("Move's value must be 1 greater than its predecesor.")
+
+        can_place: Result = self.can_place(x, y, value)
+        if not can_place.success():
+            return can_place
 
         # make the move
         self.last_move = (x, y)
-        placed: Result = super().place(x, y, value)
-
-        # asses score for the move (is move place on a diagonal)
-        dx, dy = predecessor
-        if dx == dy:
-            self.score += 1
-
-        return placed
+        return super().place(x, y, value)
     
 
     def from_data(self, data) -> None:
@@ -273,9 +278,10 @@ class Level2(Game):
         # could not find value
         return False
 
-    def place(self, x: int, y: int, value: int = None) -> Result:
+    def can_place(self, x, y, value):
+        '''can the value be placed at (x,y) according to the game rules?'''
         # does the placement pass the basic checks?
-        basic_checks = super().can_place(x, y, value)
+        basic_checks: Result = super().can_place(x, y, value)
         if not basic_checks.success():
             return basic_checks
 
@@ -299,16 +305,33 @@ class Level2(Game):
 
         if found_value == False:
             return Err("The number of the move and the number in the inner board must be on a straight line.")
+        
+        return OK()
+
+
+    def place(self, x: int, y: int, value: int = None) -> Result:
+
+        if not value:
+            value = self.cur_move
+
+        can_place: Result = self.can_place(x, y, value)
+        if not can_place.success():
+            return can_place
 
         # make the move
         self.played[value] = True
         return super().place(x, y, value)
 
-    def undo(self):
-        undone_move = super().undo()
-        # also update played[] for level 2
-        if undone_move:
-            self.played[undone_move[2]] = False
+    def undo(self) -> Result:
+
+        # return result if failed
+        did_undo = super().undo()
+        if not did_undo.success():
+            return did_undo
+        
+        # update played[] for level 2 functionality
+        undone_move = did_undo.obj()
+        self.played[undone_move[2]] = False
 
     def from_data(self, data) -> None:
         super().from_data(data)
@@ -339,18 +362,14 @@ class Game_loader():
         except FileNotFoundError as e:
             return Err(f"{e}")
         
-        try:
-            for key, cls in Game_loader.levels.items():
-                if data["level"] == key:
-                    # make new instance of the required type
-                    obj = cls.__new__(cls)
-                    # populate the required data
-                    obj.from_data(data)
-                    obj.add_log("Load", f"game loaded at {datetime.now()}")
-                    return obj
-        except KeyError as e:
-            return Err(f"{e}")
-
+        for key, cls in Game_loader.levels.items():
+            if data["level"] == key:
+                # make new instance of the required type
+                obj = cls.__new__(cls)
+                # populate the required data
+                obj.from_data(data)
+                obj.add_log("Load", f"game loaded at {datetime.now()}")
+                return OK(obj)
 
 
 if __name__ == "__main__":
