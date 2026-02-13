@@ -2,7 +2,6 @@
 from __future__ import annotations
 from datetime import datetime
 from json import load, dump
-from typing import Iterator
 from random import randint
 
 class Result:
