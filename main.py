@@ -1,6 +1,7 @@
 #!./venv/bin/python3
 from __future__ import annotations
 from datetime import datetime
+from datetime import datetime
 from json import load, dump
 from random import randint
 
@@ -67,7 +68,11 @@ class Game:
         self.history = list()
         # init cell values 
         self.cells = [[0]*size for _ in range(size)]
-        # add header to log
+        self.diagflag = False
+        self.next_number = 2 # L1 begins 
+        self.move_stack = [] # undo
+        self.one_p = None # initial positions of x and y
+        self.log = []
     
     def find_value(self, value: int) -> Result:
         '''Given a value, returns the (x,y) coordinate of the instances of the value'''
@@ -210,11 +215,85 @@ class Game:
         result += f"\n\nScore: {self.score()}"
         
         return result
+    
+    def get(self, x: int, y:int) -> int:
+        return self.cells[x][y] # retrieve (x,y) numbers
+    
+    def set(self, x:int, y:int, value: int):
+        self.cells[x][y] = value # set numbers at cell (x,y)
+    
+    # undo move
+    def undo(self):
+        if not self.move_stack:
+            return Move_result(False, "Cannot undo.")
+        
+        prev = self.move_stack.pop()
+        if self.level == 2:
+            self.played[self.cells[prev["x"]][prev["y"]]] = False
+        self.set(prev["x"], prev["y"], 0)
+        self.score = prev["prev_score"]
+        self.cur_move = prev["next"]
+        if self.level == 1:
+            self.last_move = prev["last_move"]
+
+        return Move_result(True, f"Undo successful. Next value is {self.cur_move}")
+    
+    
+    def add_log(self, category: str, description):
+        self.log.append(f"Category: {category} {description}\n")
+
+
+    def clear(self) -> Move_result:
+        ''' Clearing the board, but 1 stays in its main position. 1 does not get cleared'''
+
+        # L1 board clearing
+        if self.level == 1:
+            try: 
+                if self.last_move is None:
+                    return Move_result(False, "Unable to clear, value 1 position not found.")
+            except AttributeError:
+                return Move_result(False, "Unable to clear, value 1 position not found.")
+        
+            # clearing thr grid
+            for i in range(self.size):
+                for t in range(self.size):
+                    self.set(i, t, 0)
+
+        # setting original position of number '1'
+            first_x, first_y = self.one_p
+            self.set(first_x, first_y, 1)
+
+            # reset
+            self.cur_move = 2
+            self.score = 0
+            self.move_stack.clear()
+            self.last_move = self.one_p
+
+            return Move_result(True, "Board is now clear for Level 1.")
+
+        # L2 board clearing
+        if self.level == 2:
+            # clearing edge cells on the 7x7
+            for i in range(self.size):
+                for t in range(self.size):
+                    border = (i == 0 or i == self.size - 1 or t == 0 or t == self.size - 1)
+                    if border:
+                        self.set(i, t, 0)
+                        
+            # start value at level 2
+            self.cur_move = 2
+            self.move_stack.clear()
+            self.played = [False] * (2 * (self.size + self.size))
+            return Move_result(True, "Outer grid cleared. ")
+        
+        # 
+        return Move_result(False, f"Uknown Level --> {self.level} not available")
 
 
 class Level1(Game):
     def __init__(self, player_name: str, size: int):
         super().__init__(size)
+        self.move_stack = []
         self.level: int = 1
         self.player = player_name
         # add a header to the log
@@ -568,10 +647,10 @@ if __name__ == "__main__":
         if in_str == "q":
             exit()
 
-        if in_str == "s":
-            in_str = input("Choose a filename for your game: ")
-            Game_loader.save_game(newGame, in_str)
-            continue
+#         if in_str == "s":
+#             in_str = input("Choose a filename for your game: ")
+#             Game_loader.save_game(newGame, in_str)
+#             continue
 
         if in_str == "l":
             in_str = input("type the game file to load: ")
