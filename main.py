@@ -46,27 +46,39 @@ class OK(Result):
         super().__init__(obj, description)
         self.successful = True
 
+
+
 class Game:
     cells: list[list[int]]
     size : int
-    score: int
     level: int
     log  : list[str]
-    player  : str
-    cur_move: int
-    history : list[tuple[int, int, int]]
+    player      : str
+    cur_move    : int
+    history     : list[tuple[int, int, int]]
+    base_score  : int
 
     def __init__(self, size: int):
         self.size = size
         self.level = None
         self.cur_move = 2
-        self.score = 0
+        self.base_score = 0
         self.log = list()
         self.history = list()
         # init cell values 
         self.cells = [[0]*size for _ in range(size)]
         # add header to log
     
+    def find_value(self, value: int) -> Result:
+        '''Given a value, returns the (x,y) coordinate of the first found instance of the value'''
+
+        for x, row in enumerate(self.cells):
+            for y, cell in enumerate(row):
+                if cell == value:
+                    return OK((x, y))
+        
+        return Err("Value not found.")
+
     def can_place(self, x: int, y: int, value: int) -> Result:
         '''Checks if it is valid to place a value at a given coordinate within the rules of the game. x and y are index values'''
 
@@ -81,12 +93,28 @@ class Game:
         # ok to proceed
         return OK()
 
+    def is_filled(self) -> bool:
+        '''Returns true if every cell on the board is filled'''
+
+        for row in self.cells:
+            for cell in row:
+                if cell == 0:
+                    return False
+        return True
+
+    def score(self) -> int:
+        return self.base_score
+
     def place(self, x: int, y: int, value):
         '''Places a value at a cell'''
 
+        can_place: Result = self.can_place(x, y, value)
+        if not can_place.success():
+            return can_place      
+
         self.cells[x][y] = value
         self.cur_move += 1
-        self.history.insert(0, (x, y, value, self.score))
+        self.history.append((x, y, value))
         self.add_log("move", f"Placed {value} in space ({x},{y}).")
         return OK()
 
@@ -96,18 +124,19 @@ class Game:
         last_move: tuple
         # if there are any moves to reverse
         if len(self.history):
-            last_move = self.history.pop(0)
+            last_move = self.history.pop()
         else:
             return Err("No Moves to undo.")
+        
         # reverse the move, decriment last move, restore score, and remove value from x, y
         self.cur_move -= 1
-        self.score = last_move[3]
         self.cells[last_move[0]][last_move[1]] = 0
         self.add_log("undo", f"Removed {last_move[2]} from ({last_move[0]},{last_move[1]})")
         return OK(last_move)
 
     def clear(self):
         '''reverses every move in the history'''
+
         if not len(self.history):
             return
         self.add_log("clear", "clearing history")
@@ -116,15 +145,15 @@ class Game:
 
     def add_log(self, category: str, description):
         '''Add an entry to the game's log'''
+
         self.log.append(f"[{category}] {description}\n")    
     
     def level_up(self) -> Result:
         '''Attempt to premote the game board to the next level'''
+
         # make sure all cells are filled
-        for row in self.cells:
-            for cell in row:
-                if cell == 0:
-                    return Err("All spaces must be filled before moving to the next level")
+        if not self.is_filled():
+            return Err("All spaces must be filled before moving to the next level")
         
         # is premotion possible?
         if (self.level + 1) <= len(Game_loader.levels):
@@ -133,25 +162,26 @@ class Game:
             # make new instance of the required type
             # the type will alsways be lvl2 or more, and take a lower level game as its argument
             new_game: Game = cls(self)
-            new_game.add_log("level up", f"leveled up from level {self.level} to level {new_game.level}, with a score of {self.score}.")
+            new_game.add_log("level up", f"leveled up from level {self.level} to level {new_game.level}, with a score of {self.score()}.")
             Game_loader.save_game(self, f"{self.player}")
             return OK(new_game, f"Premoted from level {self.level} to level {new_game.level}") 
         else:
-            self.add_log("Game Finished", f"Game finished with a score of {self.score}")
+            self.add_log("Game Finished", f"Game finished with a score of {self.score()}")
             Game_loader.save_game(self, f"{self.player}")
             return Err("Game is already at max level")
 
 
     def from_data(self, data: dict) -> None:
         '''Populate the object's atributes from a dictionary'''
+
         self.cells   = data["cells"]
         self.size    = data["size"]
-        self.score   = data["score"]
         self.level   = data["level"]
         self.player  = data["player"]
         self.log     = data["log"]
         self.history = data["history"]
         self.cur_move  = data["cur_move"]
+        self.base_score   = data["base_score"]
 
     def __str__(self):
         result: str = ""
@@ -171,7 +201,7 @@ class Game:
             result += str(i + 1).rjust(3)
 
         # add score
-        result += f"\n\nScore: {self.score}"
+        result += f"\n\nScore: {self.score()}"
         
         return result
 
@@ -195,27 +225,29 @@ class Level1(Game):
         self.last_move = (rand_x, rand_y)
 
     def can_place(self, x: int, y: int, value: int):
+        '''can the value be placed at (x,y) according to the game rules?'''
 
         # does the placement pass the basic checks?
         basic_checks = super().can_place(x, y, value)
         if not basic_checks.success():
             return basic_checks
         
-        # check 3x3 area arround the move
-        u: int = max(x - 1, 0)
-        v: int = max(y - 1, 0)
-        w: int = min(x + 1, self.size - 1)
-        h: int = min(y + 1, self.size - 1)
+        # check if predecessor is on the board
+        found_pred: Result = self.find_value(value - 1)
 
-        # look for predecessor in 3x3 area
-        found_prev = False
-        for i in range(u, w + 1):
-            for j in range(v, h + 1):
-                if self.cells[i][j] == value - 1:
-                    found_prev = True
+        pred_pos: tuple
+        if found_pred.success():
+            pred_pos = found_pred.obj()
+        else:
+            return found_pred
+        
+        # check if predecessor is a neighbor
+        px, py = pred_pos
+        dx = abs(x - px)
+        dy = abs(y - py)
 
-        if not found_prev:
-            return Err("Move must be a neighbor of its predececcor.")
+        if dx > 1 or dy > 1:
+            return Err("Move must be a neighbor of its predecessor")
 
         # make sure value is correct (ascending order)
         if value:
@@ -231,14 +263,47 @@ class Level1(Game):
         if not value:
             value = self.cur_move
 
-        can_place: Result = self.can_place(x, y, value)
-        if not can_place.success():
-            return can_place
+        did_place: Result = super().place(x, y, value)
+        if not did_place.success():
+            return did_place
 
         # make the move
         self.last_move = (x, y)
-        return super().place(x, y, value)
-    
+        return did_place
+
+
+    def score(self) -> int:
+        '''calculates and returns the score of the game board'''
+
+        score = self.base_score
+
+        # look for the one position
+        cur_pos: tuple[int, int]
+        for y, row in enumerate(self.cells):
+            for x, cell in enumerate(row):
+                if cell == 1:
+                    cur_pos = (x, y)
+
+        # starting from the one position, proceed up the numbers while keeping score
+        value: int = 1
+        while True:
+            found_next: Result = self.find_value(value + 1)
+            if found_next.success():
+                # check if next value is on diagonal
+                x, y = cur_pos
+                px, py = found_next.obj()
+
+                dx = abs(x - px)
+                dy = abs(y - py)
+                # add score for diagonal
+                if dx == dy:
+                    score += 1
+
+                # incriment to next value
+                cur_pos = (px, py)
+                value += 1
+            else:
+                return score    
 
     def from_data(self, data) -> None:
         self.last_move = data["last_move"]
@@ -251,7 +316,7 @@ class Level2(Game):
         size = base_game.size + 2
         super().__init__(size)
         # inherit values from the level1 board
-        self.score = base_game.score
+        self.base_score = base_game.score()
         self.level = 2
         self.player = base_game.player
         self.log = base_game.log
@@ -266,6 +331,7 @@ class Level2(Game):
     def _search_in_line(self, x: int, y: int, dx: int, dy: int, value: int) -> bool:
         '''Searches in a straight line, starting from cell (x,y), and moving according to (dx, dy), searching for value returns true if found, returns false if not.
         \nx and y are index values'''
+
         i: int = x
         j: int = y
         # while the search is in bounds
@@ -280,13 +346,14 @@ class Level2(Game):
 
     def can_place(self, x, y, value):
         '''can the value be placed at (x,y) according to the game rules?'''
+
         # does the placement pass the basic checks?
         basic_checks: Result = super().can_place(x, y, value)
         if not basic_checks.success():
             return basic_checks
-
+        
         # make sure number has not already been played
-        if self.played[value]:
+        if self.played[value] == True:
             return Err("Each number may only be placed once.")
 
         # do checks for if value is present in the apropriate line
@@ -310,17 +377,21 @@ class Level2(Game):
 
 
     def place(self, x: int, y: int, value: int = None) -> Result:
+        '''Attempt to place the value [value] at coordinates ([x], [y])'''
 
         if not value:
             value = self.cur_move
 
-        can_place: Result = self.can_place(x, y, value)
-        if not can_place.success():
-            return can_place
+        did_place: Result = super().place(x, y, value)
+        if not did_place.success():
+            return did_place
 
         # make the move
         self.played[value] = True
-        return super().place(x, y, value)
+        return did_place
+
+    def score(self) -> int:
+        return self.base_score
 
     def undo(self) -> Result:
 
@@ -395,7 +466,9 @@ if __name__ == "__main__":
 
         if in_str == "l":
             in_str = input("type the game file to load: ")
-            newGame = Game_loader.load_game(in_str)
+            did_load: Result = Game_loader.load_game(in_str)
+            if did_load.success():
+                newGame = did_load.obj()
             continue
 
         x, y, val = in_str.split(" ")
@@ -409,5 +482,5 @@ if __name__ == "__main__":
         # check for level up
         lvl_up = newGame.level_up()
         if lvl_up.success():
-            newGame = lvl_up.game_board()
+            newGame = lvl_up.obj()
         
