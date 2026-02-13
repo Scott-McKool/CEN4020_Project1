@@ -1,191 +1,201 @@
-#!./venv/bin/python
-from main import Game, Level1, Result, Game_loader
-from tkinter import messagebox, simpledialog
+#!./venv/bin/python3
+from sys import exit
 import tkinter as tk
-import simpleaudio
-import re
+from tkinter import simpledialog
+from tkinter import messagebox
+from tkinter import ttk
+import simpleaudio as sa
+from main import *
 
-
-class Game_UI(tk.Tk):
-
-    game: Game
-    buttons: list[list[tk.Button]]
-
-    grid_frame      : tk.Frame
-    controls_frame  : tk.Frame
-
-    score_lable     : tk.Label
-    next_move_lable : tk.Label
+class gameWindow():
+    gameobj: Game
+    root: tk.Tk
+    gridframe: tk.Frame
+    inputframe: tk.Frame
+    grid: list
+    entryButton: tk.Button
+    currentNum: tk.Label
+    saveButton: tk.Button
+    loadButton: tk.Button
+    undoButton: tk.Button
+    clearButton: tk.Button
+    levelupButton: tk.Button
+    currentScore: tk.Label
+    playersetButton: tk.Button
+    playersetEntry: tk.Entry
+    yay: sa.WaveObject
+    unyay: sa.WaveObject
 
     def __init__(self, game: Game):
-        super().__init__()
+        self.gameobj = game
+        self.yay = sa.WaveObject.from_wave_file("sound/yay.wav")
+        self.unyay = sa.WaveObject.from_wave_file("sound/unyay.wav")
+        self.root = tk.Tk()
+        self.root.title("Level 1")
+        self.gridframe = tk.Frame(self.root, padx = 10, pady=10, borderwidth=1, relief="solid")
+        self.gridframe.pack(anchor="nw")
 
-        self.game = game
-        self.title(f"Game Level {game.level} - {game.player}")
-        self.geometry(f"820x720")
-        self.buttons = []
+        self.grid = []
+        self.gamegridInit()
 
-        # Frame for the game grid
-        self.grid_frame = tk.Frame(self)
-        self.grid_frame.grid(row=0, column=0, padx=10, pady=10)
+        self.inputframe = tk.Frame(self.root, padx=10, pady=10)
+        self.inputframe.pack(anchor="sw")
 
-        # Frame for the controls (score, buttons, etc.)
-        self.controls_frame = tk.Frame(self)
-        self.controls_frame.grid(row=1, column=0, padx=10, pady=10)
+        self.inputframe.rowconfigure(0, weight=1)
+        self.inputframe.rowconfigure(1, weight=1)
+        self.inputframe.rowconfigure(2, weight=1)
+        self.inputframe.rowconfigure(3, weight=1)
+        self.inputframe.rowconfigure(4, weight=1)
+        self.inputframe.columnconfigure(0, weight=1)
+        self.inputframe.columnconfigure(1, weight=1)
+        self.inputframe.columnconfigure(2, weight=1)
 
-        self.draw()
+        self.currentNum = tk.Label(self.inputframe, text=f"Next number: {self.gameobj.cur_move}")
+        self.currentNum.grid(column=1, row=0, sticky='ew', padx=5, pady=5)
 
-    def draw(self):
-        '''Draw/redraw the contents of the main window'''
+        self.currentScore = tk.Label(self.inputframe, text=f"Current score: {self.gameobj.score}")
+        self.currentScore.grid(column=0, row=0, sticky='ew', padx=5, pady=5)
 
-        self.draw_cells()
-        self.draw_controlls()
+        self.playersetButton = tk.Button(self.inputframe, text="Type player name:", command=lambda: self.setPlayer())
+        self.playersetButton.grid(column=0, row=1, sticky='ew', padx=5, pady=5)
 
-    def draw_controlls(self):
-        '''Draw the controll text and buttons'''
+        self.playersetEntry = tk.Entry(self.inputframe)
+        self.playersetEntry.grid(column=1, row=1, sticky='ew', padx=5, pady=5)
 
-        # Destroy existing controls if they exist
-        for widget in self.controls_frame.winfo_children():
-            widget.destroy()
+        self.saveButton = tk.Button(self.inputframe, text="Save Game", command=lambda: self.saveGUI())
+        self.saveButton.grid(column=2, row=0, sticky='ew', padx=5, pady=5)
 
-        # score
-        self.score_lable = tk.Label(self.controls_frame, text=f"Score {self.game.score()}", anchor="w")
-        self.score_lable.grid(row=self.game.size, column=0, columnspan=self.game.size, sticky="w", padx=10, pady=10)
+        self.loadButton = tk.Button(self.inputframe, text="Load Game", command=lambda: self.LoadGUI())
+        self.loadButton.grid(column=2, row=1, sticky='ew', padx=5, pady=5)
 
-        # next number to place
-        self.next_move_lable = tk.Label(self.controls_frame, text=f"Now place: {self.game.cur_move}", anchor="w")
-        self.next_move_lable.grid(row=self.game.size + 1, column=0, columnspan=self.game.size, sticky="w", padx=10, pady=10)
+        self.undoButton = tk.Button(self.inputframe, text="Undo Move", command=lambda: self.undoGUI())
+        self.undoButton.grid(column=2, row=2, sticky='ew', padx=5, pady=5)
 
-        # save and load buttons
-        self.save_btn = tk.Button(self.controls_frame, text="Save Game", command=self.save_game)
-        self.save_btn.grid(row=self.game.size+2, column=0, padx=10, pady=10, sticky="w")
+        self.clearButton = tk.Button(self.inputframe, text="Clear Board", command=lambda: self.clearGUI())
+        self.clearButton.grid(column=2, row=3, sticky='ew', padx=5, pady=5)
 
-        self.load_btn = tk.Button(self.controls_frame, text="Load Game", command=self.load_game)
-        self.load_btn.grid(row=self.game.size+2, column=1, padx=10, pady=10, sticky="w")
+        self.levelupButton = tk.Button(self.inputframe, text="Level Up", command=lambda: self.levelUp())
+        self.levelupButton.grid(column=2, row=4, sticky='ew', padx=5, pady=5)
 
-        # clear and undo buttons
-        self.clear_btn = tk.Button(self.controls_frame, text="Undo", command=self.undo)
-        self.clear_btn.grid(row=self.game.size+3, column=0, padx=10, pady=10, sticky="w")
+        self.gamegridGUI()
 
-        self.undo_btn = tk.Button(self.controls_frame, text="clear", command=self.clear)
-        self.undo_btn.grid(row=self.game.size+3, column=1, padx=10, pady=10, sticky="w")
+        self.root.mainloop()
 
-    def draw_cells(self):
-        '''Create all the button to display and interact the the cells'''
-
-        # destroy any existing cells
-        for widget in self.grid_frame.winfo_children():
-            widget.destroy()
-
-        self.buttons = []
-
-        # draw grid for x, y
-        for y in range(self.game.size):
+    def gamegridInit(self):
+        self.gridframe.grid = []
+        self.grid = []
+        for i in range(self.gameobj.size):
             row = []
-            for x in range(self.game.size):
-                # draw a cell
-                btn = tk.Button(self.grid_frame, text=str(self.game.cells[x][y]), 
-                                width=5, height=1, 
-                                command=lambda x=x, y=y: self.on_cell_click(x, y), 
-                                font=("Helvetica", 20, "bold"), bg="grey")
-                
-                btn.grid(row=y, column=x, padx=5, pady=5)
-                if self.game.cells[x][y] != 0:
-                    btn.config(bg="green")
-                row.append(btn)
+            for j in range(self.gameobj.size):
+                cell = tk.Button(self.gridframe, text=f" ", bg="white", borderwidth=1, relief="solid", font=("Helvetica", 10), width = 8, height=4, padx=5, pady=5, command=lambda x=i, y=j: self.placeGUI(x, y, self.gameobj.cur_move))
+                cell.grid(row=i, column=j, sticky='nsew')
+                row.append(cell)
+            self.gridframe.grid.append(row)
+            self.grid.append(row)
 
-            self.buttons.append(row)
+    def gamegridGUI(self):
+        
+        for i in range(self.gameobj.size):
+            for j in range(self.gameobj.size):
+                if self.gameobj.cells[i][j] != 0:
+                    if self.gameobj.level == 2:
+                        if (i == 0 or i == 6) and (j == 0 or j == 6):
+                            self.grid[i][j].configure(text=f"{self.gameobj.cells[i][j]}", bg="yellow")
+                        elif (i == 0 or i == 6) or (j == 0 or j == 6):
+                            self.grid[i][j].configure(text=f"{self.gameobj.cells[i][j]}", bg="cyan")
+                        else:
+                            self.grid[i][j].configure(text=f"{self.gameobj.cells[i][j]}", bg="lime")
+                    else:
+                        self.grid[i][j].configure(text=f"{self.gameobj.cells[i][j]}", bg="lime")
 
-    def update_cells(self):
-        """Updates the game grid with the latest values. as well as changing text"""
+        if self.gameobj.level == 1:
+            self.currentNum.configure(text=f"Next Number: {self.gameobj.cur_move}")
+            self.currentScore.configure(text=f"Current Score: {self.gameobj.score}")
+    
+    def placeGUI(self, x, y, value):
 
-        self.score_lable.config(text=f"Score {self.game.score()}")
-        self.next_move_lable.config(text=f"Now place: {self.game.cur_move}")
+        if self.gameobj.level == 1:
+            if value != self.gameobj.cur_move:
+                messagebox.showerror(title="Value Error", message="Error: invalid value")
+                return
+            else:
+                placeval = value
+        elif self.gameobj.level == 2:
+            placeval = simpledialog.askinteger(title="Enter Value", prompt="Enter value to be placed")
+            if placeval == None:
+                return
+        
+        placeRes: Move_result = self.gameobj.place(x, y, placeval)
 
-        # go through all the cell buttons
-        for y in range(self.game.size):
-            for x in range(self.game.size):
-                # set correct number and color
-                self.buttons[y][x].config(text=str(self.game.cells[x][y]))
-                if self.game.cells[x][y] != 0:
-                    self.buttons[y][x].config(bg="green")
-                else:
-                    self.buttons[y][x].config(bg="grey")
+        if placeRes.success():
+            yay_play = self.yay.play()
 
-    def on_cell_click(self, x: int, y: int):
-        # attempt the move
-        try_place: Result = self.game.place(x, y, self.game.cur_move)
-        if try_place.success():
-            
-            simpleaudio.WaveObject.from_wave_file("sound/success.wav").play()
-            # update the cells display, as well as any text that might need to change
-            self.update_cells()
+        elif not placeRes.success():
+            unyay_play = self.unyay.play()
+            messagebox.showerror(title="Place Error", message=f"Error: {placeRes.description()}")
+
+        if self.winChecker() == True:
+            if self.gameobj.level == 1:
+                self.gamegridGUI()
+                messagebox.showinfo(title="Yay!", message="You win level 1! Click on the \"Level Up\" button to move to Level 2.")
+            else:
+                messagebox.showinfo(title="Yay^2!", message="You have won level 2, and the game! (so far...)")
+
+        self.gamegridGUI()
+
+    def setPlayer(self):
+        self.gameobj.player = self.playersetEntry.get()
+
+    def levelUp(self):
+        lvlupRes: Level_up_result = self.gameobj.level_up()
+        if lvlupRes.success():
+            self.gameobj = lvlupRes.game_board()
+            self.gamegridInit()
+            self.gamegridGUI()
+            self.currentNum.configure(text=f"")
+            self.currentScore.configure(text=f"")
         else:
-            # play the sound and show a popup
-            simpleaudio.WaveObject.from_wave_file("sound/failure.wav").play()
-            self.show_error(try_place)
-            
-        # see if level up occurs
-        try_level_up: Result = self.game.level_up()
-        if try_level_up.success():
-            game_board: Game = try_level_up.obj()
-            self.game = game_board
-            self.draw()
-        elif try_level_up.description() == "Game is already at max level":
-            messagebox.showinfo("You win!", "You won the game!")
-
-    def show_error(self, message: str):
-        """Shows an error message box."""
-        messagebox.showerror("Error", message)
-
-    def ask_for_filename(self, action: str) -> str:
-        """Prompts the user for a filename."""
-        filename = simpledialog.askstring(f"{action} Game", f"Enter the game's name: ")
-        # clean the filename
-        filename = re.sub(r"[/\\?%*:|\"<>\x7F\x00-\x1F]", "-", filename)
-        return filename.strip() if filename else None
-
-    def save_game(self):
-        """Saves the current game."""
-
-        filename = self.ask_for_filename("Save")
-        if not filename:
-            return None
-        Game_loader.save_game(self.game, filename)
-
-    def load_game(self):
-        """Loads a saved game."""
-
-        filename = self.ask_for_filename("Load")
-        if not filename:
-            return None
-
-        try_load: Result = Game_loader.load_game(filename)
-        if try_load.success():
-            self.game = try_load.obj()
-        else:
-            self.show_error(try_load.description())
-
-        self.title(f"Game Level {self.game.level} - {self.game.player}")
-        self.draw()
-
-    def undo(self):
-        '''Undo the most recent move'''
-
-        self.game.undo()
-        self.update_cells()
+            messagebox.showerror(title="Level Up error", message=f"Error: {lvlupRes.description()}")
 
 
-    def clear(self):
-        '''Undo every move'''
+    def winChecker(self) -> bool:
+        winChecker = True
 
-        self.game.clear()
-        self.update_cells()
+        for i in range(self.gameobj.size):
+            for j in range(self.gameobj.size):
+                if self.gameobj.cells[i][j] == 0:
+                    winChecker = False
+        
+        return winChecker
 
+    def saveGUI(self):
+        saveStr = simpledialog.askstring(title="Save Game", prompt="Enter file name (without extension)", parent=self.root)
+        Game_loader.save_game(self.gameobj, saveStr)
 
+    def LoadGUI(self):
+        loadStr = simpledialog.askstring(title="Load Game", prompt="Enter file name (without extension)", parent=self.root)
+        self.gameobj = Game_loader.load_game(loadStr)
+        self.gamegridInit()
+        self.gamegridGUI()
+
+    def undoGUI(self):
+        undoobj = self.gameobj.undo()
+        if undoobj.success() != True:
+            messagebox.showerror(title="Undo Error", message=f"Error: {undoobj.description()}")
+        self.gamegridInit()
+        self.gamegridGUI()
+
+    def clearGUI(self):
+        self.gameobj.clear()
+        self.gamegridInit()
+        self.gamegridGUI()
+
+    def __del__(self):
+        self.root.quit()
 
 if __name__ == "__main__":
-    player_name = simpledialog.askstring(f"new Game", f"Enter your Name: ")
-    game_instance = Level1(player_name, 5)
-    app = Game_UI(game_instance)
-    app.mainloop()
+    newGame: Game = Level1("player1", 5)
+
+    gameGUI: gameWindow = gameWindow(newGame)
+
+    exit(0)
