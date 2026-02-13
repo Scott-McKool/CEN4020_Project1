@@ -7,6 +7,7 @@ git clone https://github.com/Scott-McKool/CEN4020_Project1.git
 cd CEN4020_Project1/
 python3 -m venv venv
 source venv/bin/activate
+pip3 install -r requirements.txt
 python3 main.py
 ```
 
