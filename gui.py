@@ -1,5 +1,5 @@
 #!./venv/bin/python
-from main import Game, Level1, Move_result, Level_up_result, Game_loader
+from main import Game, Level1, Result, Game_loader
 from tkinter import messagebox, simpledialog
 import tkinter as tk
 import simpleaudio
@@ -10,6 +10,12 @@ class Game_UI(tk.Tk):
 
     game: Game
     buttons: list[list[tk.Button]]
+
+    grid_frame      : tk.Frame
+    controls_frame  : tk.Frame
+
+    score_lable     : tk.Label
+    next_move_lable : tk.Label
 
     def __init__(self, game: Game):
         super().__init__()
@@ -30,6 +36,8 @@ class Game_UI(tk.Tk):
         self.draw()
 
     def draw(self):
+        '''Draw/redraw the contents of the main window'''
+
         self.draw_cells()
         self.draw_controlls()
 
@@ -41,7 +49,7 @@ class Game_UI(tk.Tk):
             widget.destroy()
 
         # score
-        self.score_lable = tk.Label(self.controls_frame, text=f"Score {self.game.score}", anchor="w")
+        self.score_lable = tk.Label(self.controls_frame, text=f"Score {self.game.score()}", anchor="w")
         self.score_lable.grid(row=self.game.size, column=0, columnspan=self.game.size, sticky="w", padx=10, pady=10)
 
         # next number to place
@@ -64,9 +72,11 @@ class Game_UI(tk.Tk):
 
     def draw_cells(self):
         '''Create all the button to display and interact the the cells'''
+
         # destroy any existing cells
         for widget in self.grid_frame.winfo_children():
             widget.destroy()
+
         self.buttons = []
 
         # draw grid for x, y
@@ -88,7 +98,8 @@ class Game_UI(tk.Tk):
 
     def update_cells(self):
         """Updates the game grid with the latest values. as well as changing text"""
-        self.score_lable.config(text=f"Score {self.game.score}")
+
+        self.score_lable.config(text=f"Score {self.game.score()}")
         self.next_move_lable.config(text=f"Now place: {self.game.cur_move}")
 
         # go through all the cell buttons
@@ -103,7 +114,7 @@ class Game_UI(tk.Tk):
 
     def on_cell_click(self, x: int, y: int):
         # attempt the move
-        try_place: Move_result = self.game.place(x, y, self.game.cur_move)
+        try_place: Result = self.game.place(x, y, self.game.cur_move)
         if try_place.success():
             
             simpleaudio.WaveObject.from_wave_file("sound/success.wav").play()
@@ -115,9 +126,10 @@ class Game_UI(tk.Tk):
             self.show_error(try_place)
             
         # see if level up occurs
-        try_level_up: Level_up_result = self.game.level_up()
+        try_level_up: Result = self.game.level_up()
         if try_level_up.success():
-            self.game = try_level_up.game_board()
+            game_board: Game = try_level_up.obj()
+            self.game = game_board
             self.draw()
         elif try_level_up.description() == "Game is already at max level":
             messagebox.showinfo("You win!", "You won the game!")
@@ -135,6 +147,7 @@ class Game_UI(tk.Tk):
 
     def save_game(self):
         """Saves the current game."""
+
         filename = self.ask_for_filename("Save")
         if not filename:
             return None
@@ -142,24 +155,30 @@ class Game_UI(tk.Tk):
 
     def load_game(self):
         """Loads a saved game."""
+
         filename = self.ask_for_filename("Load")
         if not filename:
             return None
-        try:
-            self.game = Game_loader.load_game(filename)
-        except FileNotFoundError:
-            self.show_error("File could not be found")
+
+        try_load: Result = Game_loader.load_game(filename)
+        if try_load.success():
+            self.game = try_load.obj()
+        else:
+            self.show_error(try_load.description())
+
         self.title(f"Game Level {self.game.level} - {self.game.player}")
         self.draw()
 
     def undo(self):
         '''Undo the most recent move'''
+
         self.game.undo()
         self.update_cells()
 
 
     def clear(self):
         '''Undo every move'''
+
         self.game.clear()
         self.update_cells()
 
