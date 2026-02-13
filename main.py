@@ -1,7 +1,6 @@
 #!./venv/bin/python3
 from __future__ import annotations
 from datetime import datetime
-from datetime import datetime
 from json import load, dump
 from random import randint
 
@@ -269,7 +268,7 @@ class Game:
             self.move_stack.clear()
             self.last_move = self.one_p
 
-            return Move_result(True, "Board is now clear for Level 1.")
+            return Result(True, "Board is now clear for Level 1.")
 
         # L2 board clearing
         if self.level == 2:
@@ -284,10 +283,10 @@ class Game:
             self.cur_move = 2
             self.move_stack.clear()
             self.played = [False] * (2 * (self.size + self.size))
-            return Move_result(True, "Outer grid cleared. ")
+            return Result(True, "Outer grid cleared. ")
         
         # 
-        return Move_result(False, f"Uknown Level --> {self.level} not available")
+        return Result(False, f"Uknown Level --> {self.level} not available")
 
 
 class Level1(Game):
