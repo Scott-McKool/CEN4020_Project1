@@ -2,6 +2,7 @@
 from __future__ import annotations
 from datetime import datetime
 from json import load, dump
+from typing import Iterator
 from random import randint
 
 class Result:
@@ -70,14 +71,20 @@ class Game:
         # add header to log
     
     def find_value(self, value: int) -> Result:
-        '''Given a value, returns the (x,y) coordinate of the first found instance of the value'''
+        '''Given a value, returns the (x,y) coordinate of the instances of the value'''
 
-        for x, row in enumerate(self.cells):
-            for y, cell in enumerate(row):
-                if cell == value:
-                    return OK((x, y))
+        # compose tuple of coordinates of matches
+        found = tuple([
+            (x, y)
+            for x, row in enumerate(self.cells)
+            for y, cell in enumerate(row)
+            if cell == value
+        ])
+
+        if len(found) == 0:
+            return Err("Value not found.")
         
-        return Err("Value not found.")
+        return OK(found)
 
     def can_place(self, x: int, y: int, value: int) -> Result:
         '''Checks if it is valid to place a value at a given coordinate within the rules of the game. x and y are index values'''
@@ -222,7 +229,6 @@ class Level1(Game):
         rand_x: int = randint(0, self.size - 1)
         rand_y: int = randint(0, self.size - 1)
         self.cells[rand_x][rand_y] = 1
-        self.last_move = (rand_x, rand_y)
 
     def can_place(self, x: int, y: int, value: int):
         '''can the value be placed at (x,y) according to the game rules?'''
@@ -242,7 +248,7 @@ class Level1(Game):
             return found_pred
         
         # check if predecessor is a neighbor
-        px, py = pred_pos
+        px, py = pred_pos[0]
         dx = abs(x - px)
         dy = abs(y - py)
 
@@ -267,8 +273,6 @@ class Level1(Game):
         if not did_place.success():
             return did_place
 
-        # make the move
-        self.last_move = (x, y)
         return did_place
 
 
@@ -291,7 +295,7 @@ class Level1(Game):
             if found_next.success():
                 # check if next value is on diagonal
                 x, y = cur_pos
-                px, py = found_next.obj()
+                px, py = found_next.obj()[0]
 
                 dx = abs(x - px)
                 dy = abs(y - py)
@@ -306,7 +310,6 @@ class Level1(Game):
                 return score    
 
     def from_data(self, data) -> None:
-        self.last_move = data["last_move"]
         super().from_data(data)
 
 
@@ -371,7 +374,7 @@ class Level2(Game):
         found_value = self._search_in_line(x, y, deltaX, deltaY, value)
 
         if found_value == False:
-            return Err("The number of the move and the number in the inner board must be on a straight line.")
+            return Err("The number of the move must be on a straight line with the same number in the inner board.")
         
         return OK()
 
@@ -409,10 +412,117 @@ class Level2(Game):
         self.played = data["played"]
         
 
+class Level3(Game):
+
+    def __init__(self, base_game: Level1):
+        # a level2 board is initialized from a level1 board, but with the outer ring of spaces
+        super().__init__(base_game.size)
+        # inherit values from the level1 board
+        self.base_score = base_game.score()
+        self.level = 3
+        self.player = base_game.player
+        self.log = base_game.log
+        # carry over the values from the level 2 board
+        self.cells = base_game.cells
+        for y in range(1, base_game.size - 1):
+            for x in range(1, base_game.size -1 ):
+                if self.cells[x][y] != 1:
+                    self.cells[x][y] = 0
+
+    def can_place(self, x, y, value):
+        '''can the value be placed at (x,y) according to the game rules?'''
+
+        # does the placement pass the basic checks?
+        basic_checks: Result = super().can_place(x, y, value)
+        if not basic_checks.success():
+            return basic_checks
+        
+        # do level 1 check for predecesor
+
+        # make sure value is correct (ascending order)
+        if value:
+            if value != self.cur_move:
+                return Err("Move's value must be 1 greater than its predecesor.")
+
+        # check if predecessor is on the board
+        found_pred: Result = self.find_value(value - 1)
+
+        coords: tuple
+        if found_pred.success():
+            coords = found_pred.obj()
+        else:
+            return found_pred
+        
+        found = False
+        for coord in coords:
+
+            # check if predecessor is a neighbor
+            px, py = coord
+            dx = abs(x - px)
+            dy = abs(y - py)
+
+            if dx <= 1 and dy <= 1:
+                found = True
+                break
+        
+        if not found:
+            return Err("Move must be a neighbor of its predecessor")
+
+            
+        # do level 2 check for line
+
+        # check up, down, left, and rightmost cells
+        to_check: list[tuple[int, int]] = []
+
+        to_check.append((0, y))             # leftmost
+        to_check.append((self.size-1, y))   # rightmost
+        to_check.append((x, 0))             # upmost
+        to_check.append((x, self.size-1))   # downmost
+
+        # if on the main diagonal (top left to bottom right)
+        if x == y:
+            # add top left and top right
+            to_check.append((0, 0))
+            to_check.append((self.size-1, self.size-1))
+
+        # if on the antidiagonal (top right to bottom left)
+        if (self.size - 1 - x) == y:
+            # add top right and bottom left
+            to_check.append((self.size-1, 0))
+            to_check.append((0, self.size-1))
+
+        # check the relevent cells for a match
+        found = False
+        for coord in to_check:
+            px, py = coord
+            if value == self.cells[px][py]:
+                found = True
+                break
+
+        if not found:
+            return Err("The number of the move must be on a straight line with the same number in the outer ring.")
+
+        return OK()
+    
+    def place(self, x: int, y: int, value: int = None) -> Result:
+        '''Attempt to place the value [value] at coordinates ([x], [y])'''
+
+        if not value:
+            value = self.cur_move
+
+        did_place: Result = super().place(x, y, value)
+        if not did_place.success():
+            return did_place
+
+        # make the move
+        return did_place
+
+
 class Game_loader():
     levels: dict = {
         1 : Level1,
-        2 : Level2
+        2 : Level2,
+        3 : Level3,
     }
         
     def save_game(game: Game, name: str):
