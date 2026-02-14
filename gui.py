@@ -1,11 +1,11 @@
 #!./venv/bin/python3
-from sys import exit
-import tkinter as tk
+from main import Game, Result, Game_loader, Level1
 from tkinter import simpledialog
 from tkinter import messagebox
-from tkinter import ttk
 import simpleaudio as sa
-from main import *
+from tkinter import ttk
+import tkinter as tk
+from sys import exit
 
 class gameWindow():
     gameobj: Game
@@ -125,7 +125,7 @@ class gameWindow():
             if placeval == None:
                 return
         
-        placeRes: Move_result = self.gameobj.place(x, y, placeval)
+        placeRes: Result = self.gameobj.place(x, y, placeval)
 
         if placeRes.success():
             yay_play = self.yay.play()
@@ -147,9 +147,9 @@ class gameWindow():
         self.gameobj.player = self.playersetEntry.get()
 
     def levelUp(self):
-        lvlupRes: Level_up_result = self.gameobj.level_up()
+        lvlupRes: Result = self.gameobj.level_up()
         if lvlupRes.success():
-            self.gameobj = lvlupRes.game_board()
+            self.gameobj = lvlupRes.obj()
             self.gamegridInit()
             self.gamegridGUI()
             self.currentNum.configure(text=f"")
