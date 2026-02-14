@@ -53,7 +53,7 @@ class gameWindow():
         self.currentNum = tk.Label(self.inputframe, text=f"Next number: {self.gameobj.cur_move}")
         self.currentNum.grid(column=1, row=0, sticky='ew', padx=5, pady=5)
 
-        self.currentScore = tk.Label(self.inputframe, text=f"Current score: {self.gameobj.score}")
+        self.currentScore = tk.Label(self.inputframe, text=f"Current score: {self.gameobj.score()}")
         self.currentScore.grid(column=0, row=0, sticky='ew', padx=5, pady=5)
 
         self.playersetButton = tk.Button(self.inputframe, text="Type player name:", command=lambda: self.setPlayer())
@@ -110,7 +110,7 @@ class gameWindow():
 
         if self.gameobj.level == 1:
             self.currentNum.configure(text=f"Next Number: {self.gameobj.cur_move}")
-            self.currentScore.configure(text=f"Current Score: {self.gameobj.score}")
+            self.currentScore.configure(text=f"Current Score: {self.gameobj.score()}")
     
     def placeGUI(self, x, y, value):
 
