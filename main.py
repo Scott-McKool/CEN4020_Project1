@@ -405,6 +405,7 @@ class Level2(Game):
         # update played[] for level 2 functionality
         undone_move = did_undo.obj()
         self.played[undone_move[2]] = False
+        return OK(undone_move)
 
     def from_data(self, data) -> None:
         super().from_data(data)
