@@ -1,0 +1,29 @@
+[] Starting new Game:
+[] Player name: abe
+[] Game started: 2026-02-13 12:54:51.852423
+[] Level 1
+[] ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[move] Placed 2 in space (0,0).
+[move] Placed 3 in space (1,0).
+[move] Placed 4 in space (2,1).
+[move] Placed 5 in space (2,0).
+[move] Placed 6 in space (3,0).
+[undo] Removed 6 from (3,0)
+[undo] Removed 5 from (2,0)
+[move] Placed 5 in space (3,0).
+[move] Placed 6 in space (4,0).
+[move] Placed 7 in space (4,1).
+[move] Placed 8 in space (3,2).
+[move] Placed 9 in space (4,3).
+[move] Placed 10 in space (4,4).
+[move] Placed 11 in space (3,4).
+[move] Placed 12 in space (2,3).
+[move] Placed 13 in space (1,4).
+[move] Placed 14 in space (0,4).
+[move] Placed 15 in space (0,3).
+[move] Placed 16 in space (1,2).
+[move] Placed 17 in space (1,1).
+[move] Placed 18 in space (2,2).
+[move] Placed 19 in space (1,3).
+[move] Placed 20 in space (0,2).
+[Save] Game saved at 2026-02-13 12:55:20.461727
