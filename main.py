@@ -330,7 +330,7 @@ class Level2(Game):
             for x in range(0, base_game.size):
                 self.cells[x+1][y+1] = base_game.cells[x][y]
         # keep track of played numbers
-        self.played = [False] * (2 * (self.size + self.size)) # array of size = perimeter of board
+        self.played = [False] * (4 * self.size) # array of size = perimeter of board
 
 
     def _search_in_line(self, x: int, y: int, dx: int, dy: int, value: int) -> bool:
