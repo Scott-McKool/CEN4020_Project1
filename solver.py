@@ -1,6 +1,7 @@
 #!./venv/bin/python
 # this file is for a solver for game boards
 from main import Game, Result, Err, OK, Level1
+from copy import deepcopy
 from time import time
 
 class Move():
@@ -94,7 +95,8 @@ class Solver():
     def solve(game, time_limit: int = 1):
         '''Attempts to solve a given game board, will either return the filled game board or None. will only run for time_limit seconds'''
 
-        return Solver.dfs(game, time() + time_limit)
+        # create a copy of game, set the time limit, and then solve the copy and return it.
+        return Solver.dfs(deepcopy(game), time() + time_limit)
 
                     
 def test_boards(size: int = 5) -> list[Game]:
