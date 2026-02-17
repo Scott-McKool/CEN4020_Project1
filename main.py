@@ -189,6 +189,9 @@ class Game:
         self.cur_move  = data["cur_move"]
         self.base_score   = data["base_score"]
 
+    def __hash__(self):
+        return hash(tuple(tuple(row) for row in self.cells))
+
     def __str__(self):
         result: str = ""
         # add header

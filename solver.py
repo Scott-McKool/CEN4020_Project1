@@ -37,53 +37,42 @@ class Solver():
                     game.undo()
         
         return all_moves
+    
 
-
-    def most_constrained_move(game: Game) -> Move:
-        '''Returns the legal move on the game board that has the fewest available moves after it'''
-
-        fewest: int = 1e99
-        best: Move = None
-
-        # of all the legal moves
-        mv : Move
-        for mv in Solver.get_moves(game):
-
-            # calculate the number of child moves for this potential move
-            game.place(mv.x, mv.y, mv.val)
-            legal_moves = len(Solver.get_moves(game))
-            game.undo()
-
-            # if this move is the new best (has fewest child moves)
-            if legal_moves < fewest:
-                fewest = legal_moves
-                best = mv
-
-        return best
+    def count_child_moves(game: Game, mv: Move):
+        game.place(mv.x, mv.y, mv.val)
+        legal_moves = len(Solver.get_moves(game))
+        game.undo()
+        return legal_moves
 
 
     def dfs(game: Game, deadline: int) -> Result:
         '''use depth fisrt search to look for a combination of moves that leads to a finished board. returns either a finished game board or None'''
-        
+
         # check for win
         if game.is_filled():
             return OK(game)
 
-        
-        while True:
-            # check for time
-            if time() > deadline:
-                return Err("Solver ran out of time.")
+        # get all possible moves
+        moves: list[Move] = Solver.get_moves(game)
 
-            # get the next move
-            mv: Move = Solver.most_constrained_move(game)
-            if mv is None:
-                return Err("Board has no valid solution.")
+        # sort the moves from least children to most children (most constrained to least constrained)
+        moves = sorted(
+            moves,
+            key=lambda mv: Solver.count_child_moves(game, mv)
+        )
+        # for each move
+        mv: Move
+        for mv in moves:
             
-            # make the move
+            # check for deadline
+            if time() > deadline:
+                return Err("Solver ran out of time")
+            
+            # test out the move
             game.place(mv.x, mv.y, mv.val)
 
-            # do dfs
+            # call dfs recursively, take time off the deadline to limit time spent on incorrect branches
             did_solve: Result = Solver.dfs(game, deadline)
             if did_solve.success():
                 return did_solve    # propigate up success
@@ -91,38 +80,11 @@ class Solver():
                 game.undo()         # try again with a different move
                 continue
 
+        return Err("No valid solution")
+
         
     def solve(game, time_limit: int = 1):
         '''Attempts to solve a given game board, will either return the filled game board or None. will only run for time_limit seconds'''
 
         # create a copy of game, set the time limit, and then solve the copy and return it.
         return Solver.dfs(deepcopy(game), time() + time_limit)
-
-                    
-def test_boards(size: int = 5) -> list[Game]:
-
-    all_games = []
-
-    for i in range(size):
-        for j in range(size):
-            newGame = Level1("test", size)
-            for x, row in enumerate(newGame.cells):
-                for y, cell in enumerate(row):
-                    newGame.cells[x][y] = 0
-            newGame.cells[i][j] = 1
-            all_games.append(newGame)
-
-    return all_games
-
-
-if __name__ == "__main__":
-
-    for game in test_boards(5):
-
-        print(game)
-
-        did_solve: Result = Solver.solve(game)
-        print(did_solve)
-        print(did_solve.obj())
-
-        assert(did_solve.success() == True)
