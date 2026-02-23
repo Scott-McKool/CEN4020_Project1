@@ -417,7 +417,7 @@ class Level2(Game):
 
 class Level3(Game):
 
-    def __init__(self, base_game: Level1):
+    def __init__(self, base_game: Level2):
         # a level2 board is initialized from a level1 board, but with the outer ring of spaces
         super().__init__(base_game.size)
         # inherit values from the level1 board
