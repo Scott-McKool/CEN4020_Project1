@@ -117,7 +117,7 @@ class gameWindow():
         for i in range(self.gameobj.size):
             for j in range(self.gameobj.size):
                 if self.gameobj.cells[i][j] != 0:
-                    if self.gameobj.level == 2:
+                    if self.gameobj.level >= 2:
                         if (i == 0 or i == 6) and (j == 0 or j == 6):
                             self.grid[i][j].configure(text=f"{self.gameobj.cells[i][j]}", bg="yellow")
                         elif (i == 0 or i == 6) or (j == 0 or j == 6):
@@ -127,7 +127,7 @@ class gameWindow():
                     else:
                         self.grid[i][j].configure(text=f"{self.gameobj.cells[i][j]}", bg="lime")
 
-        if self.gameobj.level == 1:
+        if self.gameobj.level == 1: # change this to serve all levels 
             self.currentNum.configure(text=f"Next Number: {self.gameobj.cur_move}")
             self.currentScore.configure(text=f"Current Score: {self.gameobj.score()}")
     
@@ -169,7 +169,7 @@ class gameWindow():
 
     def placeGUI(self, x, y, value):
 
-        if self.gameobj.level == 1:
+        if self.gameobj.level == 1 or self.gameobj.level == 3:
             if value != self.gameobj.cur_move:
                 messagebox.showerror(title="Value Error", message="Error: invalid value")
                 return
@@ -193,8 +193,11 @@ class gameWindow():
             if self.gameobj.level == 1:
                 self.gamegridGUI()
                 messagebox.showinfo(title="Yay!", message="You win level 1! Click on the \"Level Up\" button to move to Level 2.")
+            elif self.gameobj.level == 2:
+                self.gamegridGUI()
+                messagebox.showinfo(title="Yay^2!", message="You win level 2! Click on the \"Level Up\" button to move to Level 2.")
             else:
-                messagebox.showinfo(title="Yay^2!", message="You have won level 2, and the game! (so far...)")
+                messagebox.showinfo(title="Yay^3!", message="You have won level 3, and the game! (so far...)")
 
         self.gamegridGUI()
 
@@ -207,7 +210,7 @@ class gameWindow():
             self.gameobj = lvlupRes.obj()
             self.gamegridInit()
             self.gamegridGUI()
-            self.currentNum.configure(text=f"")
+            self.currentNum.configure(text=f"") # change this to show score and current number for levels 1 and 3
             self.currentScore.configure(text=f"")
         else:
             messagebox.showerror(title="Level Up error", message=f"Error: {lvlupRes.description()}")
@@ -229,7 +232,11 @@ class gameWindow():
 
     def LoadGUI(self):
         loadStr = simpledialog.askstring(title="Load Game", prompt="Enter file name (without extension)", parent=self.root)
-        self.gameobj = Game_loader.load_game(loadStr).obj()
+        loadedgame = Game_loader.load_game(loadStr)
+        if loadedgame.success():
+            self.gameobj = loadedgame.obj()
+        else:
+            messagebox.showerror(title="Load Error", message=f"Error: {loadedgame.description()}")
         self.gamegridInit()
         self.gamegridGUI()
 
