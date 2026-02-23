@@ -1,5 +1,6 @@
 #!./venv/bin/python3
 from main import Game, Result, Game_loader, Level1
+from solver import Move, Solver
 import string
 from tkinter import simpledialog
 from tkinter import messagebox
