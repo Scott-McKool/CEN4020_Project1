@@ -53,7 +53,7 @@ class Solver():
 
         # check the cache
         mv_hash = hash((hash(game), hash(mv)))
-        if mv_hash in cache.keys():
+        if mv_hash in cache:
             return cache[mv_hash]
 
         game.place(mv.x, mv.y, mv.val)  # simulate placing move
@@ -70,7 +70,7 @@ class Solver():
         '''returns all legal moves for the game board, sorted from most constrained to least constrained'''
 
         # check the cache
-        if hash(game) in cache.keys():
+        if hash(game) in cache:
             return cache[hash(game)]
 
         # get all legal moves
@@ -88,34 +88,32 @@ class Solver():
         return all_moves
 
 
-    def dfs(game: Game, deadline: int, cache: dict) -> Result:
+    def dfs(game: Game, deadline: int, cache: dict = dict()) -> Result:
         '''use depth fisrt search to look for a combination of moves that leads to a finished board. returns either a finished game board or None'''
 
         # check for win
         if game.is_filled():
+            cache[hash(game)] = OK(game)
             return OK(game)
 
         # check the cache
-        if hash(game) in cache.keys():
+        if hash(game) in cache:
             return cache[hash(game)]
-        
+ 
         # get all possible moves
         moves: list[Move] = Solver.get_moves(game)
 
         # for each move
         mv: Move
         for mv in moves:
+
+            # test out the move
+            game.place(mv.x, mv.y, mv.val)
+            did_solve: Result = Solver.dfs(game, deadline, cache)
             
             # check for deadline
             if time() > deadline:
                 return Err("Solver ran out of time")
-            
-            # test out the move
-            game.place(mv.x, mv.y, mv.val)
-            did_solve: Result = Solver.dfs(game, deadline, cache)
-
-            # add to cache
-            cache[hash(game)] = did_solve
 
             if did_solve.success():
                 return did_solve    # propigate up success
@@ -123,6 +121,8 @@ class Solver():
                 game.undo()         # try again with a different move
                 continue
 
+        # add to cache
+        cache[hash(game)] = Err("No valid solution")
         return Err("No valid solution")
 
         
@@ -130,7 +130,7 @@ class Solver():
         '''Attempts to solve a given game board, will either return the filled game board or None. will only run for time_limit seconds'''
 
         # create a copy of game, set the time limit, and then solve the copy and return it.
-        return Solver.dfs(deepcopy(game), time() + time_limit, dict())
+        return Solver.dfs(deepcopy(game), time() + time_limit)
 
 
 if __name__ == "__main__":
@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
     game: Game = Game_loader.load_game("test").obj()
 
-    trials = 1
+    trials = 10
 
     sum_time = 0
     did_solve: Result

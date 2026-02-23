@@ -417,15 +417,15 @@ class Level2(Game):
 
 class Level3(Game):
 
-    def __init__(self, base_game: Level1):
-        # a level2 board is initialized from a level1 board, but with the outer ring of spaces
+    def __init__(self, base_game: Level2):
+        # a level3 board is initialized from a level2 board
         super().__init__(base_game.size)
-        # inherit values from the level1 board
+        # inherit values from the level2 board
         self.base_score = base_game.score()
         self.level = 3
         self.player = base_game.player
         self.log = base_game.log
-        # carry over the values from the level 2 board
+        # carry over the values from the level2 board
         self.cells = base_game.cells
         for y in range(1, base_game.size - 1):
             for x in range(1, base_game.size -1 ):
