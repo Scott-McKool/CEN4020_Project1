@@ -396,7 +396,14 @@ class Level2(Game):
         return did_place
 
     def score(self) -> int:
-        return self.base_score
+
+        score = self.base_score
+
+        for is_played in self.played:
+            if is_played:
+                score += 1
+
+        return score
 
     def undo(self) -> Result:
 
@@ -431,6 +438,8 @@ class Level3(Game):
             for x in range(1, base_game.size -1 ):
                 if self.cells[x][y] != 1:
                     self.cells[x][y] = 0
+        # keep track of played for scoring
+        self.played = [False] * ((self.size) ** 2)
 
     def can_place(self, x, y, value):
         '''can the value be placed at (x,y) according to the game rules?'''
@@ -484,7 +493,7 @@ class Level3(Game):
 
         # if on the main diagonal (top left to bottom right)
         if x == y:
-            # add top left and top right
+            # add top left and bottom right
             to_check.append((0, 0))
             to_check.append((self.size-1, self.size-1))
 
@@ -518,8 +527,35 @@ class Level3(Game):
             return did_place
 
         # make the move
+        self.played[value] = True
         return did_place
+    
+    def score(self) -> int:
 
+        score = self.base_score
+
+        for is_played in self.played:
+            if is_played:
+                score += 1
+
+        return score
+
+    def undo(self) -> Result:
+
+        # return result if failed
+        did_undo = super().undo()
+        if not did_undo.success():
+            return did_undo
+        
+        # update played[] for level 2 functionality
+        undone_move = did_undo.obj()
+        self.played[undone_move[2]] = False
+        return OK(undone_move)
+
+    def from_data(self, data) -> None:
+
+        super().from_data(data)
+        self.played = data["played"]
 
 class Game_loader():
     levels: dict = {
