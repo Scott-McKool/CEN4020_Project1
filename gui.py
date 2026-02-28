@@ -252,6 +252,9 @@ class gameWindow():
         self.gamegridInit()
         self.gamegridGUI()
 
+    def solverGUI(self):
+        pass
+
     def __del__(self):
         self.root.quit()
 
