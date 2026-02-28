@@ -1,5 +1,6 @@
 #!./venv/bin/python3
-from main import Game, Result, Game_loader, Level1
+from result import Result
+from game import Game, Level1, Game_loader
 from tkinter import simpledialog
 from tkinter import messagebox
 import simpleaudio as sa

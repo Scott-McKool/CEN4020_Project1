@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from auth import login, register, database_connection
-from main import Level1
+from game import Level1
 from gui import gameWindow
 
 
