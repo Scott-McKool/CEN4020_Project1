@@ -32,9 +32,14 @@ class gameWindow():
     unyay: sa.WaveObject
     themes: dict
     themeselect: string
+    solverFlag: bool
+    gameobjHolder: Game | None
+    solverButton: tk.Button
 
     def __init__(self, game: Game):
         self.gameobj = game
+        self.gameobjHolder = None
+        self.solverFlag = False
         self.themes = {
             "light": ["#fafafa", "#e4e5f1", "#d2d3db", "#9394a5", "#484b6a"],
             "dark": ["#181818", "#212121", "#3d3d3d", "#aaaaaa", "#ffffff"],
@@ -65,6 +70,7 @@ class gameWindow():
         self.inputframe.rowconfigure(4, weight=1)
         self.inputframe.rowconfigure(5, weight=1)
         self.inputframe.rowconfigure(6, weight=1)
+        self.inputframe.rowconfigure(7, weight=1)
         self.inputframe.columnconfigure(0, weight=1)
         self.inputframe.columnconfigure(1, weight=1)
         self.inputframe.columnconfigure(2, weight=1)
@@ -98,11 +104,14 @@ class gameWindow():
         self.levelupButton = tk.Button(self.inputframe, text="Level Up", command=lambda: self.levelUp(), fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.levelupButton.grid(column=2, row=4, sticky='ew', padx=5, pady=5)
 
-        self.scoreboardButton = tk.Button(self.inputframe, text = "Scoreboard", command = lambda: self.showScoreboard())
+        self.scoreboardButton = tk.Button(self.inputframe, text = "Scoreboard", command = lambda: self.showScoreboard(), fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.scoreboardButton.grid(column = 2, row = 5, sticky = 'ew', padx = 5, pady = 5)
 
         self.themebutton = tk.Button(self.inputframe, text="Select Theme", command=lambda: self.themerefresh(), fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.themebutton.grid(column=2, row=6, sticky='ew', padx=5, pady=5)
+
+        self.solverButton = tk.Button(self.inputframe, text="Show Solution", command=lambda: self.solverGUI(), fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.solverButton.grid(column=2, row=7, sticky='ew', padx=5, pady=5)
 
         self.gamegridGUI()
 
@@ -173,6 +182,8 @@ class gameWindow():
         self.clearButton.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.levelupButton.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.themebutton.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.scoreboardButton.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.solverButton.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.gamegridGUI()
 
     def placeGUI(self, x, y, value):
@@ -220,6 +231,7 @@ class gameWindow():
         lvlupRes: Result = self.gameobj.level_up()
         if lvlupRes.success():
             self.gameobj = lvlupRes.obj()
+            self.solverFlag = False
             self.gamegridInit()
             self.gamegridGUI()
             self.currentNum.configure(text=f"") # change this to show score and current number for levels 1 and 3
@@ -265,7 +277,22 @@ class gameWindow():
         self.gamegridGUI()
 
     def solverGUI(self):
-        pass
+        if self.solverFlag == False:
+            self.gameobjHolder = self.gameobj
+            solvedGame = Solver.solve(self.gameobj)
+            if solvedGame.success():
+                self.gameobj = solvedGame.obj()
+                self.solverFlag = True
+                self.gamegridInit()
+                self.gamegridGUI()
+            else:
+                messagebox.showerror(title="Solver Error", message=f"Error: {solvedGame.description()}")
+
+        elif self.solverFlag == True:
+            self.gameobj = self.gameobjHolder
+            self.solverFlag = False
+            self.gamegridInit()
+            self.gamegridGUI()
 
     def __del__(self):
         self.root.quit()
