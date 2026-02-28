@@ -9,6 +9,8 @@ class AuthWindow(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Login/Register")
+        self.geometry("400x300")
+
 
         # for username
         tk.Label(self, text= "Username:").pack() # text label on the window that says Username:, pack() places the text on the window

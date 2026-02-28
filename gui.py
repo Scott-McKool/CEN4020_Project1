@@ -56,10 +56,12 @@ class gameWindow():
         self.currentScore = tk.Label(self.inputframe, text=f"Current score: {self.gameobj.score()}")
         self.currentScore.grid(column=0, row=0, sticky='ew', padx=5, pady=5)
 
-        self.playersetButton = tk.Button(self.inputframe, text="Type player name:", command=lambda: self.setPlayer())
+        self.playersetButton = tk.Button(self.inputframe, text="Player name:", command=lambda: self.setPlayer())
         self.playersetButton.grid(column=0, row=1, sticky='ew', padx=5, pady=5)
 
         self.playersetEntry = tk.Entry(self.inputframe)
+        self.playersetEntry.insert(0, self.gameobj.player)
+        self.playersetEntry['state'] = 'readonly'
         self.playersetEntry.grid(column=1, row=1, sticky='ew', padx=5, pady=5)
 
         self.saveButton = tk.Button(self.inputframe, text="Save Game", command=lambda: self.saveGUI())
@@ -76,6 +78,9 @@ class gameWindow():
 
         self.levelupButton = tk.Button(self.inputframe, text="Level Up", command=lambda: self.levelUp())
         self.levelupButton.grid(column=2, row=4, sticky='ew', padx=5, pady=5)
+
+        self.scoreboardButton = tk.Button(self.inputframe, text = "Scoreboard", command = lambda: self.showScoreboard())
+        self.scoreboardButton.grid(column = 2, row = 5, sticky = 'ew', padx = 5, pady = 5)
 
         self.gamegridGUI()
 
@@ -145,6 +150,10 @@ class gameWindow():
 
     def setPlayer(self):
         self.gameobj.player = self.playersetEntry.get()
+
+    def showScoreboard(self):
+        from scoreboard import ScoreBoardWindow
+        ScoreBoardWindow(self.root)
 
     def levelUp(self):
         lvlupRes: Result = self.gameobj.level_up()
