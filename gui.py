@@ -27,6 +27,7 @@ class gameWindow():
     currentScore: tk.Label
     playersetButton: tk.Button
     playersetEntry: tk.Entry
+    scoreboardButton: tk.Button
     yay: sa.WaveObject
     unyay: sa.WaveObject
     themes: dict
@@ -63,6 +64,7 @@ class gameWindow():
         self.inputframe.rowconfigure(3, weight=1)
         self.inputframe.rowconfigure(4, weight=1)
         self.inputframe.rowconfigure(5, weight=1)
+        self.inputframe.rowconfigure(6, weight=1)
         self.inputframe.columnconfigure(0, weight=1)
         self.inputframe.columnconfigure(1, weight=1)
         self.inputframe.columnconfigure(2, weight=1)
@@ -100,7 +102,7 @@ class gameWindow():
         self.scoreboardButton.grid(column = 2, row = 5, sticky = 'ew', padx = 5, pady = 5)
 
         self.themebutton = tk.Button(self.inputframe, text="Select Theme", command=lambda: self.themerefresh(), fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
-        self.themebutton.grid(column=2, row=5, sticky='ew', padx=5, pady=5)
+        self.themebutton.grid(column=2, row=6, sticky='ew', padx=5, pady=5)
 
         self.gamegridGUI()
 
