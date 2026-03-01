@@ -9,6 +9,10 @@ import simpleaudio as sa
 from tkinter import ttk
 import tkinter as tk
 from sys import exit
+import time
+import asyncio
+import asynctkinter as atk
+from async_tkinter_loop import async_handler, async_mainloop
 
 class gameWindow():
     gameobj: Game
@@ -35,11 +39,18 @@ class gameWindow():
     solverFlag: bool
     gameobjHolder: Game | None
     solverButton: tk.Button
+    timer: int
+    timerLabel: tk.Label
+    timerStart: int
+    timerScore: int
 
     def __init__(self, game: Game):
         self.gameobj = game
         self.gameobjHolder = None
         self.solverFlag = False
+        self.timer = 80
+        self.timerScore = 0
+        self.timerStart = time.time()
         self.themes = {
             "light": ["#fafafa", "#e4e5f1", "#d2d3db", "#9394a5", "#484b6a"],
             "dark": ["#181818", "#212121", "#3d3d3d", "#aaaaaa", "#ffffff"],
@@ -78,16 +89,19 @@ class gameWindow():
         self.currentNum = tk.Label(self.inputframe, text=f"Next number: {self.gameobj.cur_move}", fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.currentNum.grid(column=1, row=0, sticky='ew', padx=5, pady=5)
 
-        self.currentScore = tk.Label(self.inputframe, text=f"Current score: {self.gameobj.score()}", fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.currentScore = tk.Label(self.inputframe, text=f"Current score: {int(self.gameobj.score() + self.timerScore)}", fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.currentScore.grid(column=0, row=0, sticky='ew', padx=5, pady=5)
 
         self.playersetButton = tk.Button(self.inputframe, text="Player name:", command=lambda: self.setPlayer())
-        self.playersetButton.grid(column=0, row=1, sticky='ew', padx=5, pady=5)
+        self.playersetButton.grid(column=0, row=2, sticky='ew', padx=5, pady=5)
 
         self.playersetEntry = tk.Entry(self.inputframe)
         self.playersetEntry.insert(0, self.gameobj.player)
         self.playersetEntry['state'] = 'readonly'
-        self.playersetEntry.grid(column=1, row=1, sticky='ew', padx=5, pady=5)
+        self.playersetEntry.grid(column=1, row=2, sticky='ew', padx=5, pady=5)
+
+        self.timerLabel = tk.Label(self.inputframe, text=f"Time Allotted: {self.timer}", fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.timerLabel.grid(column=0, row=1, sticky='ew', padx=5, pady=5)
 
         self.saveButton = tk.Button(self.inputframe, text="Save Game", command=lambda: self.saveGUI(), fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.saveButton.grid(column=2, row=0, sticky='ew', padx=5, pady=5)
@@ -144,9 +158,10 @@ class gameWindow():
                     else:
                         self.grid[i][j].configure(text=f"{self.gameobj.cells[i][j]}", bg="lime")
 
-        if self.gameobj.level == 1: # change this to serve all levels 
+        if self.gameobj.level == 1 or self.gameobj.level == 3: # change this to serve all levels 
             self.currentNum.configure(text=f"Next Number: {self.gameobj.cur_move}")
-            self.currentScore.configure(text=f"Current Score: {self.gameobj.score()}")
+
+        self.currentScore.configure(text=f"Current Score: {self.gameobj.score() + self.timerScore}")
     
 
     def themerefresh(self):
@@ -184,6 +199,7 @@ class gameWindow():
         self.themebutton.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.scoreboardButton.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.solverButton.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.timerLabel.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.gamegridGUI()
 
     def placeGUI(self, x, y, value):
@@ -212,11 +228,17 @@ class gameWindow():
             if self.gameobj.level == 1:
                 self.gamegridGUI()
                 messagebox.showinfo(title="Yay!", message="You win level 1! Click on the \"Level Up\" button to move to Level 2.")
+                self.timekeep()
+                self.currentScore.configure(text=f"Current score: {int(self.gameobj.score() + self.timerScore)}")
             elif self.gameobj.level == 2:
                 self.gamegridGUI()
                 messagebox.showinfo(title="Yay^2!", message="You win level 2! Click on the \"Level Up\" button to move to Level 2.")
+                self.timekeep()
+                self.currentScore.configure(text=f"Current score: {int(self.gameobj.score() + self.timerScore)}")
             else:
                 messagebox.showinfo(title="Yay^3!", message="You have won level 3, and the game! (so far...)")
+                self.timekeep()
+            self.currentScore.configure(text=f"Current score: {int(self.gameobj.score() + self.timerScore)}")
 
         self.gamegridGUI()
 
@@ -234,11 +256,21 @@ class gameWindow():
             self.solverFlag = False
             self.gamegridInit()
             self.gamegridGUI()
-            self.currentNum.configure(text=f"") # change this to show score and current number for levels 1 and 3
-            self.currentScore.configure(text=f"")
+            if self.gameobj.level == 2:
+                self.currentNum.configure(text=f"") # change this to show score and current number for levels 1 and 3
+                self.timer = 300
+                self.timerStart = time.time()
+            elif self.gameobj.level == 3:
+                self.timer = 600
+                self.timerStart = time.time()
+            self.timerLabel.configure(text=f"Time allotted: {self.timer}")
         else:
             messagebox.showerror(title="Level Up error", message=f"Error: {lvlupRes.description()}")
 
+    def timekeep(self):
+        endTime = time.time()
+        duration = endTime - self.timerStart
+        self.timerScore = self.timer - duration
 
     def winChecker(self) -> bool:
         winChecker = True
