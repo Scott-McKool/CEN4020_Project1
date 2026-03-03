@@ -1,18 +1,14 @@
 #!./venv/bin/python3
 from result import Result
 from game import Game, Level1, Game_loader
-from solver import Move, Solver
+from solver import Solver
 import string
 from tkinter import simpledialog
 from tkinter import messagebox
 import simpleaudio as sa
-from tkinter import ttk
 import tkinter as tk
 from sys import exit
 import time
-import asyncio
-import asynctkinter as atk
-from async_tkinter_loop import async_handler, async_mainloop
 
 class gameWindow():
     gameobj: Game
