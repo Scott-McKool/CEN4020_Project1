@@ -1,6 +1,7 @@
 #!./venv/bin/python
 # this file is for a solver for game boards
-from main import Game, Result, Err, OK
+from result import Result, Err, OK
+from game import Game
 from copy import deepcopy
 from time import time
 

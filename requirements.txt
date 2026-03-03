@@ -1,2 +1,2 @@
-simpleaudio
+git+https://github.com/cexen/py-simple-audio.git
 pyinstaller
