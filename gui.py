@@ -266,7 +266,7 @@ class gameWindow():
     def timekeep(self):
         endTime = time.time()
         duration = endTime - self.timerStart
-        self.timerScore = self.timer - duration
+        self.timerScore = round(self.timer - duration)
 
     def winChecker(self) -> bool:
         winChecker = True
