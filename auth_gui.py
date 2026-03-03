@@ -1,3 +1,4 @@
+#!./venv/bin/python
 import tkinter as tk
 from tkinter import messagebox
 from auth import login, register, database_connection

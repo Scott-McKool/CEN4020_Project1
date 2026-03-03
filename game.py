@@ -354,7 +354,14 @@ class Level2(Game):
         return did_place
 
     def score(self) -> int:
-        return self.base_score
+
+        score = self.base_score
+
+        for is_played in self.played:
+            if is_played:
+                score += 1
+
+        return score
 
     def undo(self) -> Result:
 
@@ -375,20 +382,22 @@ class Level2(Game):
 
 class Level3(Game):
 
-    def __init__(self, base_game: Level1):
-        # a level2 board is initialized from a level1 board, but with the outer ring of spaces
+    def __init__(self, base_game: Level2):
+        # a level3 board is initialized from a level2 board
         super().__init__(base_game.size)
-        # inherit values from the level1 board
+        # inherit values from the level2 board
         self.base_score = base_game.score()
         self.level = 3
         self.player = base_game.player
         self.log = base_game.log
-        # carry over the values from the level 2 board
+        # carry over the values from the level2 board
         self.cells = base_game.cells
         for y in range(1, base_game.size - 1):
             for x in range(1, base_game.size -1 ):
                 if self.cells[x][y] != 1:
                     self.cells[x][y] = 0
+        # keep track of played for scoring
+        self.played = [False] * ((self.size) ** 2)
 
     def can_place(self, x, y, value):
         '''can the value be placed at (x,y) according to the game rules?'''
@@ -442,7 +451,7 @@ class Level3(Game):
 
         # if on the main diagonal (top left to bottom right)
         if x == y:
-            # add top left and top right
+            # add top left and bottom right
             to_check.append((0, 0))
             to_check.append((self.size-1, self.size-1))
 
@@ -476,9 +485,35 @@ class Level3(Game):
             return did_place
 
         # make the move
+        self.played[value] = True
         return did_place
     
+    def score(self) -> int:
 
+        score = self.base_score
+
+        for is_played in self.played:
+            if is_played:
+                score += 1
+
+        return score
+
+    def undo(self) -> Result:
+
+        # return result if failed
+        did_undo = super().undo()
+        if not did_undo.success():
+            return did_undo
+        
+        # update played[] for level 2 functionality
+        undone_move = did_undo.obj()
+        self.played[undone_move[2]] = False
+        return OK(undone_move)
+
+    def from_data(self, data) -> None:
+
+        super().from_data(data)
+        self.played = data["played"]
 
 class Game_loader():
     levels: dict = {
@@ -513,5 +548,3 @@ class Game_loader():
                 obj.from_data(data)
                 obj.add_log("Load", f"game loaded at {datetime.now()}")
                 return OK(obj)
-
-
