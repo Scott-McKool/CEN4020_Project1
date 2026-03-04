@@ -1,12 +1,11 @@
 #!./venv/bin/python3
 from result import Result
 from game import Game, Level1, Game_loader
-from solver import Move, Solver
+from solver import Solver
 import string
 from tkinter import simpledialog
 from tkinter import messagebox
 import simpleaudio as sa
-from tkinter import ttk
 import tkinter as tk
 from sys import exit
 import time
@@ -267,7 +266,7 @@ class gameWindow():
     def timekeep(self):
         endTime = time.time()
         duration = endTime - self.timerStart
-        self.timerScore = self.timer - duration
+        self.timerScore = round(self.timer - duration)
 
     def winChecker(self) -> bool:
         winChecker = True

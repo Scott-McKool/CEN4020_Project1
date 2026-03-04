@@ -1,12 +1,7 @@
 #!./venv/bin/python3
 from __future__ import annotations
-from datetime import datetime
-from json import load, dump
-from random import randint
-from result import Result, Err, OK
-from game import Game, Level1, Level2, Level3, Game_loader
-
-
+from result import Result
+from game import Game, Level1, Game_loader
 
 
 if __name__ == "__main__":
