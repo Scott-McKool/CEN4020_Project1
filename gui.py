@@ -284,10 +284,10 @@ class gameWindow():
         else:
             messagebox.showerror(title="Level Up error", message=f"Error: {lvlupRes.description()}")
 
-    def timekeep(self):
-        endTime = time.time()
-        duration = endTime - self.timerStart
-        self.timerScore = round(self.timer - duration)
+    # def timekeep(self):
+    #     endTime = time.time()
+    #     duration = endTime - self.timerStart
+    #     self.timerScore = round(self.timer - duration)
 
     def timerGUI(self):
         self.timerLabel.config(text=f"Time Left: {self.timer - self.timerTicker}")
