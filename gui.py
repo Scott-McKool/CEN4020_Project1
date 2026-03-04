@@ -358,6 +358,7 @@ class gameWindow():
                 self.gamegridInit()
                 self.gamegridGUI()
             else:
+                messagebox.showerror(title="Solver Error", message="Uh oh! Your current board is unsolvable, clearing your board to show you a fresh solution...")
                 self.clearGUI()
                 solvedGame = Solver.solve(self.gameobj)
                 self.gameobj = solvedGame.obj()
