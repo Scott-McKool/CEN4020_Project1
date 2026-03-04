@@ -39,6 +39,7 @@ class gameWindow():
     timerLabel: tk.Label
     timerStart: int
     timerScore: int
+    timerTicker: int
 
     def __init__(self, game: Game):
         self.gameobj = game
@@ -46,6 +47,7 @@ class gameWindow():
         self.solverFlag = False
         self.timer = 80
         self.timerScore = 0
+        self.timerTicker = 0
         self.timerStart = time.time()
         self.themes = {
             "light": ["#fafafa", "#e4e5f1", "#d2d3db", "#9394a5", "#484b6a"],
@@ -96,7 +98,7 @@ class gameWindow():
         self.playersetEntry['state'] = 'readonly'
         self.playersetEntry.grid(column=1, row=2, sticky='ew', padx=5, pady=5)
 
-        self.timerLabel = tk.Label(self.inputframe, text=f"Time Allotted: {self.timer}", fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.timerLabel = tk.Label(self.inputframe, text=f"Time Left: {self.timer}", fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.timerLabel.grid(column=0, row=1, sticky='ew', padx=5, pady=5)
 
         self.saveButton = tk.Button(self.inputframe, text="Save Game", command=lambda: self.saveGUI(), fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
@@ -124,6 +126,7 @@ class gameWindow():
         self.solverButton.grid(column=2, row=7, sticky='ew', padx=5, pady=5)
 
         self.gamegridGUI()
+        self.timerGUI()
 
         self.root.mainloop()
 
@@ -255,18 +258,26 @@ class gameWindow():
             if self.gameobj.level == 2:
                 self.currentNum.configure(text=f"") # change this to show score and current number for levels 1 and 3
                 self.timer = 300
+                self.timerTicker = 0
                 self.timerStart = time.time()
             elif self.gameobj.level == 3:
                 self.timer = 600
+                self.timerTicker = 0
                 self.timerStart = time.time()
             self.timerLabel.configure(text=f"Time allotted: {self.timer}")
         else:
             messagebox.showerror(title="Level Up error", message=f"Error: {lvlupRes.description()}")
 
-    def timekeep(self):
-        endTime = time.time()
-        duration = endTime - self.timerStart
-        self.timerScore = round(self.timer - duration)
+    # def timekeep(self):
+    #     endTime = time.time()
+    #     duration = endTime - self.timerStart
+    #     self.timerScore = round(self.timer - duration)
+
+    def timerGUI(self):
+        self.timerLabel.config(text=f"Time Left: {self.timer - self.timerTicker}")
+        self.timerScore = self.timer - self.timerTicker
+        self.timerTicker += 1
+        self.root.after(1000, lambda: self.timerGUI())
 
     def winChecker(self) -> bool:
         winChecker = True
