@@ -10,9 +10,6 @@ from tkinter import ttk
 import tkinter as tk
 from sys import exit
 import time
-import asyncio
-import asynctkinter as atk
-from async_tkinter_loop import async_handler, async_mainloop
 
 class gameWindow():
     gameobj: Game
