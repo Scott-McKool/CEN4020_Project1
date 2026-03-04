@@ -189,9 +189,9 @@ class gameWindow():
             if self.gameobj.level == 1:
                 self.currentScore.config(text=f"Current Score: {self.gameobj.score()}")
             elif self.gameobj.level == 2:
-                self.currentScore.config(text=f"Current Score: {self.lvl1Score + self.gameobj.score()}")
+                self.currentScore.config(text=f"Current Score: {self.lvl1Score + self.gameobj.score() - 1}")
             elif self.gameobj.level == 3:
-                self.currentScore.config(text=f"Current Score: {self.lvl2Score + self.gameobj.score()}")
+                self.currentScore.config(text=f"Current Score: {self.lvl2Score + self.gameobj.score() - 1}")
 
     def themerefresh(self):
         themechoice = simpledialog.askstring(title= "Theme Selector", prompt="Choose your theme: \n1: Light (default) \n2: Dark \n3: Moonlit \n4: Mermaid Heart \n5: Forest \n6: Redhot \n(type the name of the theme in the box below)")
@@ -255,22 +255,22 @@ class gameWindow():
 
         if self.winChecker() == True:
             if self.gameobj.level == 1:
-                self.curScore = self.timerScore + self.gameobj.score()
+                self.curScore = self.timerScore
                 self.lvl1Score = self.curScore
                 self.gamegridGUI()
                 messagebox.showinfo(title="Yay!", message="You win level 1! Click on the \"Level Up\" button to move to Level 2.")
-                self.currentScore.config(text=f"Current score: {self.curScore}")
+                self.currentScore.config(text=f"Current score: {self.curScore + self.gameobj.score()}")
             elif self.gameobj.level == 2:
-                self.curScore = self.timerScore + self.gameobj.score() + self.lvl1Score
+                self.curScore = self.timerScore + self.lvl1Score
                 self.lvl2Score = self.curScore
                 self.gamegridGUI()
                 messagebox.showinfo(title="Yay^2!", message="You win level 2! Click on the \"Level Up\" button to move to Level 2.")
-                self.currentScore.config(text=f"Current score: {self.curScore}")
+                self.currentScore.config(text=f"Current score: {self.curScore + self.gameobj.score()}")
             else:
-                self.curScore = self.timerScore + self.gameobj.score() + self.lvl2Score
+                self.curScore = self.timerScore + self.lvl2Score
                 self.gamegridGUI()
                 messagebox.showinfo(title="Yay^3!", message="You have won level 3, and the game! (so far...)")
-                self.currentScore.config(text=f"Current score: {self.curScore}")
+                self.currentScore.config(text=f"Current score: {self.curScore + self.gameobj.score()}")
 
         self.gamegridGUI()
 
@@ -301,14 +301,14 @@ class gameWindow():
         else:
             messagebox.showerror(title="Level Up error", message=f"Error: {lvlupRes.description()}")
 
-    # def timekeep(self):
-    #     endTime = time.time()
-    #     duration = endTime - self.timerStart
-    #     self.timerScore = round(self.timer - duration)
+    def timekeep(self):
+        endTime = time.time()
+        duration = endTime - self.timerStart
+        self.timerScore = round(self.timer - duration)
 
     def timerGUI(self):
         self.timerLabel.config(text=f"Time Left: {self.timer - self.timerTicker}")
-        self.timerScore = self.timer - self.timerTicker
+        self.timekeep()
         self.timerTicker += 1
         self.root.after(1000, lambda: self.timerGUI())
 
