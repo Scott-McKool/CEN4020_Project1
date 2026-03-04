@@ -150,18 +150,35 @@ class gameWindow():
 
     def gamegridGUI(self):
         
-        for i in range(self.gameobj.size):
-            for j in range(self.gameobj.size):
-                if self.gameobj.cells[i][j] != 0:
-                    if self.gameobj.level >= 2:
-                        if (i == 0 or i == 6) and (j == 0 or j == 6):
-                            self.grid[i][j].config(text=f"{self.gameobj.cells[i][j]}", bg="yellow")
-                        elif (i == 0 or i == 6) or (j == 0 or j == 6):
-                            self.grid[i][j].config(text=f"{self.gameobj.cells[i][j]}", bg="cyan")
+        if self.solverFlag == False:
+            for i in range(self.gameobj.size):
+                for j in range(self.gameobj.size):
+                    if self.gameobj.cells[i][j] != 0:
+                        if self.gameobj.level >= 2:
+                            if (i == 0 or i == 6) and (j == 0 or j == 6):
+                                self.grid[i][j].config(text=f"{self.gameobj.cells[i][j]}", bg="yellow")
+                            elif (i == 0 or i == 6) or (j == 0 or j == 6):
+                                self.grid[i][j].config(text=f"{self.gameobj.cells[i][j]}", bg="cyan")
+                            else:
+                                self.grid[i][j].config(text=f"{self.gameobj.cells[i][j]}", bg="lime")
+                        else:
+                            self.grid[i][j].config(text=f"{self.gameobj.cells[i][j]}", bg="lime")
+
+        elif self.solverFlag == True:
+            for i in range(self.gameobj.size):
+                for j in range(self.gameobj.size):
+                    if self.gameobj.cells[i][j] != 0 and self.gameobj.cells[i][j] == self.gameobjHolder.cells[i][j]:
+                        if self.gameobj.level >= 2:
+                            if (i == 0 or i == 6) and (j == 0 or j == 6):
+                                self.grid[i][j].config(text=f"{self.gameobj.cells[i][j]}", bg="yellow")
+                            elif (i == 0 or i == 6) or (j == 0 or j == 6):
+                                self.grid[i][j].config(text=f"{self.gameobj.cells[i][j]}", bg="cyan")
+                            else:
+                                self.grid[i][j].config(text=f"{self.gameobj.cells[i][j]}", bg="lime")
                         else:
                             self.grid[i][j].config(text=f"{self.gameobj.cells[i][j]}", bg="lime")
                     else:
-                        self.grid[i][j].config(text=f"{self.gameobj.cells[i][j]}", bg="lime")
+                        self.grid[i][j].config(text=f"{self.gameobj.cells[i][j]}", bg="red")
 
         if self.gameobj.level == 1 or self.gameobj.level == 3: # change this to serve all levels 
             self.currentNum.config(text=f"Next Number: {self.gameobj.cur_move}")
@@ -341,7 +358,12 @@ class gameWindow():
                 self.gamegridInit()
                 self.gamegridGUI()
             else:
-                messagebox.showerror(title="Solver Error", message=f"Error: {solvedGame.description()}")
+                self.clearGUI()
+                solvedGame = Solver.solve(self.gameobj)
+                self.gameobj = solvedGame.obj()
+                self.solverFlag == True
+                self.gamegridInit()
+                self.gamegridGUI()
 
         elif self.solverFlag == True:
             self.gameobj = self.gameobjHolder
