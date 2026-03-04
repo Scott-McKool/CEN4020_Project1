@@ -40,6 +40,9 @@ class gameWindow():
     timerStart: int
     timerScore: int
     timerTicker: int
+    curScore: int
+    lvl1Score: int
+    lvl2Score: int
 
     def __init__(self, game: Game):
         self.gameobj = game
@@ -48,6 +51,9 @@ class gameWindow():
         self.timer = 80
         self.timerScore = 0
         self.timerTicker = 0
+        self.lvl1Score = 0
+        self.lvl2Score = 0
+        self.curScore = self.timerScore + self.gameobj.score()
         self.timerStart = time.time()
         self.themes = {
             "light": ["#fafafa", "#e4e5f1", "#d2d3db", "#9394a5", "#484b6a"],
@@ -87,7 +93,7 @@ class gameWindow():
         self.currentNum = tk.Label(self.inputframe, text=f"Next number: {self.gameobj.cur_move}", fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.currentNum.grid(column=1, row=0, sticky='ew', padx=5, pady=5)
 
-        self.currentScore = tk.Label(self.inputframe, text=f"Current score: {int(self.gameobj.score() + self.timerScore)}", fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.currentScore = tk.Label(self.inputframe, text=f"Current score: {self.curScore}", fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.currentScore.grid(column=0, row=0, sticky='ew', padx=5, pady=5)
 
         self.playersetButton = tk.Button(self.inputframe, text="Player name:", command=lambda: self.setPlayer())
@@ -149,19 +155,26 @@ class gameWindow():
                 if self.gameobj.cells[i][j] != 0:
                     if self.gameobj.level >= 2:
                         if (i == 0 or i == 6) and (j == 0 or j == 6):
-                            self.grid[i][j].configure(text=f"{self.gameobj.cells[i][j]}", bg="yellow")
+                            self.grid[i][j].config(text=f"{self.gameobj.cells[i][j]}", bg="yellow")
                         elif (i == 0 or i == 6) or (j == 0 or j == 6):
-                            self.grid[i][j].configure(text=f"{self.gameobj.cells[i][j]}", bg="cyan")
+                            self.grid[i][j].config(text=f"{self.gameobj.cells[i][j]}", bg="cyan")
                         else:
-                            self.grid[i][j].configure(text=f"{self.gameobj.cells[i][j]}", bg="lime")
+                            self.grid[i][j].config(text=f"{self.gameobj.cells[i][j]}", bg="lime")
                     else:
-                        self.grid[i][j].configure(text=f"{self.gameobj.cells[i][j]}", bg="lime")
+                        self.grid[i][j].config(text=f"{self.gameobj.cells[i][j]}", bg="lime")
 
         if self.gameobj.level == 1 or self.gameobj.level == 3: # change this to serve all levels 
-            self.currentNum.configure(text=f"Next Number: {self.gameobj.cur_move}")
+            self.currentNum.config(text=f"Next Number: {self.gameobj.cur_move}")
 
-        self.currentScore.configure(text=f"Current Score: {self.gameobj.score() + self.timerScore}")
-    
+        if self.winChecker() == True:
+            self.currentScore.config(text=f"Current Score: {self.timerScore + self.gameobj.score()}")
+        else:
+            if self.gameobj.level == 1:
+                self.currentScore.config(text=f"Current Score: {self.gameobj.score()}")
+            elif self.gameobj.level == 2:
+                self.currentScore.config(text=f"Current Score: {self.lvl1Score + self.gameobj.score()}")
+            elif self.gameobj.level == 3:
+                self.currentScore.config(text=f"Current Score: {self.lvl2Score + self.gameobj.score()}")
 
     def themerefresh(self):
         themechoice = simpledialog.askstring(title= "Theme Selector", prompt="Choose your theme: \n1: Light (default) \n2: Dark \n3: Moonlit \n4: Mermaid Heart \n5: Forest \n6: Redhot \n(type the name of the theme in the box below)")
@@ -184,21 +197,21 @@ class gameWindow():
             messagebox.showerror(title="Theme select error", message=f"Error: please select a theme from the provided list")
 
         self.root['bg'] = self.themes[self.themeselect][0]
-        self.gridframe.configure(bg=self.themes[self.themeselect][0])
+        self.gridframe.config(bg=self.themes[self.themeselect][0])
         self.gamegridInit()
-        self.inputframe.configure(bg=self.themes[self.themeselect][0])
-        self.currentNum.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
-        self.currentScore.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
-        self.playersetButton.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
-        self.saveButton.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
-        self.loadButton.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
-        self.undoButton.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
-        self.clearButton.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
-        self.levelupButton.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
-        self.themebutton.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
-        self.scoreboardButton.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
-        self.solverButton.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
-        self.timerLabel.configure(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.inputframe.config(bg=self.themes[self.themeselect][0])
+        self.currentNum.config(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.currentScore.config(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.playersetButton.config(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.saveButton.config(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.loadButton.config(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.undoButton.config(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.clearButton.config(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.levelupButton.config(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.themebutton.config(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.scoreboardButton.config(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.solverButton.config(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        self.timerLabel.config(fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.gamegridGUI()
 
     def placeGUI(self, x, y, value):
@@ -225,19 +238,22 @@ class gameWindow():
 
         if self.winChecker() == True:
             if self.gameobj.level == 1:
+                self.curScore = self.timerScore + self.gameobj.score()
+                self.lvl1Score = self.curScore
                 self.gamegridGUI()
                 messagebox.showinfo(title="Yay!", message="You win level 1! Click on the \"Level Up\" button to move to Level 2.")
-                self.timekeep()
-                self.currentScore.configure(text=f"Current score: {int(self.gameobj.score() + self.timerScore)}")
+                self.currentScore.config(text=f"Current score: {self.curScore}")
             elif self.gameobj.level == 2:
+                self.curScore = self.timerScore + self.gameobj.score() + self.lvl1Score
+                self.lvl2Score = self.curScore
                 self.gamegridGUI()
                 messagebox.showinfo(title="Yay^2!", message="You win level 2! Click on the \"Level Up\" button to move to Level 2.")
-                self.timekeep()
-                self.currentScore.configure(text=f"Current score: {int(self.gameobj.score() + self.timerScore)}")
+                self.currentScore.config(text=f"Current score: {self.curScore}")
             else:
+                self.curScore = self.timerScore + self.gameobj.score() + self.lvl2Score
+                self.gamegridGUI()
                 messagebox.showinfo(title="Yay^3!", message="You have won level 3, and the game! (so far...)")
-                self.timekeep()
-            self.currentScore.configure(text=f"Current score: {int(self.gameobj.score() + self.timerScore)}")
+                self.currentScore.config(text=f"Current score: {self.curScore}")
 
         self.gamegridGUI()
 
@@ -253,10 +269,8 @@ class gameWindow():
         if lvlupRes.success():
             self.gameobj = lvlupRes.obj()
             self.solverFlag = False
-            self.gamegridInit()
-            self.gamegridGUI()
             if self.gameobj.level == 2:
-                self.currentNum.configure(text=f"") # change this to show score and current number for levels 1 and 3
+                self.currentNum.config(text=f"") # change this to show score and current number for levels 1 and 2
                 self.timer = 300
                 self.timerTicker = 0
                 self.timerStart = time.time()
@@ -264,14 +278,16 @@ class gameWindow():
                 self.timer = 600
                 self.timerTicker = 0
                 self.timerStart = time.time()
-            self.timerLabel.configure(text=f"Time allotted: {self.timer}")
+            self.timerLabel.config(text=f"Time allotted: {self.timer}")
+            self.gamegridInit()
+            self.gamegridGUI()
         else:
             messagebox.showerror(title="Level Up error", message=f"Error: {lvlupRes.description()}")
 
-    # def timekeep(self):
-    #     endTime = time.time()
-    #     duration = endTime - self.timerStart
-    #     self.timerScore = round(self.timer - duration)
+    def timekeep(self):
+        endTime = time.time()
+        duration = endTime - self.timerStart
+        self.timerScore = round(self.timer - duration)
 
     def timerGUI(self):
         self.timerLabel.config(text=f"Time Left: {self.timer - self.timerTicker}")
