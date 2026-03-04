@@ -19,6 +19,6 @@ Open terminal window in Proj1 folder
 
 install pyinstaller using "pip install pyinstaller"
 
-run "pyinstaller --onefile --windowed -w 'Proj1.py'
+run "pyinstaller --onefile --windowed -w 'auth_gui.py' -n 'Proj1'
 
 Proj1.exe (or Proj1 executable in case of linux) gets created in /dist subfolder, bring Proj1.exe/Proj1 executable into the main Proj1 folder for it to work properly. (replace existing Proj1.exe if necessary)
