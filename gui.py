@@ -12,33 +12,14 @@ import time
 
 class gameWindow():
     gameobj: Game
-    root: tk.Tk
-    gridframe: tk.Frame
-    inputframe: tk.Frame
     grid: list
-    entryButton: tk.Button
-    currentNum: tk.Label
-    saveButton: tk.Button
-    loadButton: tk.Button
-    undoButton: tk.Button
-    clearButton: tk.Button
-    levelupButton: tk.Button
-    themebutton: tk.Button
-    currentScore: tk.Label
-    playersetButton: tk.Button
-    playersetEntry: tk.Entry
-    scoreboardButton: tk.Button
     yay: sa.WaveObject
     unyay: sa.WaveObject
     themes: dict
     themeselect: string
     solverFlag: bool
     gameobjHolder: Game | None
-    solverButton: tk.Button
     timer: int
-    timerLabel: tk.Label
-    timerStart: int
-    timerScore: int
 
     def __init__(self, game: Game):
         self.gameobj = game
@@ -117,8 +98,8 @@ class gameWindow():
         self.scoreboardButton = tk.Button(self.inputframe, text = "Scoreboard", command = lambda: self.showScoreboard(), fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.scoreboardButton.grid(column = 2, row = 5, sticky = 'ew', padx = 5, pady = 5)
 
-        self.themebutton = tk.Button(self.inputframe, text="Select Theme", command=lambda: self.themerefresh(), fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
-        self.themebutton.grid(column=2, row=6, sticky='ew', padx=5, pady=5)
+        #self.themebutton = tk.Button(self.inputframe, text="Select Theme", command=lambda: self.themerefresh(), fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
+        #self.themebutton.grid(column=2, row=6, sticky='ew', padx=5, pady=5)
 
         self.solverButton = tk.Button(self.inputframe, text="Show Solution", command=lambda: self.solverGUI(), fg=self.themes[self.themeselect][4], bg=self.themes[self.themeselect][0])
         self.solverButton.grid(column=2, row=7, sticky='ew', padx=5, pady=5)
@@ -199,19 +180,8 @@ class gameWindow():
         self.gamegridGUI()
 
     def placeGUI(self, x, y, value):
-
-        if self.gameobj.level == 1 or self.gameobj.level == 3:
-            if value != self.gameobj.cur_move:
-                messagebox.showerror(title="Value Error", message="Error: invalid value")
-                return
-            else:
-                placeval = value
-        elif self.gameobj.level == 2:
-            placeval = simpledialog.askinteger(title="Enter Value", prompt="Enter value to be placed")
-            if placeval == None:
-                return
         
-        placeRes: Result = self.gameobj.place(x, y, placeval)
+        placeRes: Result = self.gameobj.place(x, y, value)
 
         if placeRes.success():
             yay_play = self.yay.play()
